@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <style>
+    body {
+      background-color: #12202b;
+      color: #66fcf1;
+      font-family: sans-serif;
+    }
+
+    .modelbgc {
+      background-color: #163851;
+    }
+  </style>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">
+        <img src="/img/logo.png" alt="Logo" width="30" height="30" class="d-inline-block align-text-top">
+        Embrace Automation<p>Hi <%= user.username %>
+        </p>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="#">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="createNew()">Create New User</a>
+          </li>
+          <li>
+            <a class="nav-link" href="/manager/logout">Logout</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Layout -->
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <nav class="col-md-3 col-lg-2 d-md-block modelbgc sidebar">
+        <div class="position-sticky pt-3">
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link active" href="#">
+                Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                Settings
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                Reports
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Main Content Section -->
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <!-- Header Section -->
+        <div class="d-flex justify-content-between flex-wrap align-items-center py-3 mb-4 border-bottom">
+          <h1 class="h2">Dashboard</h1>
+        </div>
+        <!-- Content -->
+        <div class="container my-4">
+          <div class="table-responsive border border-radius 10px">
+            <table class="table table-bordered modelbgc" id="dataTable">
+              <thead class="table-dark">
+                <tr>
+                  <th scope="col"># No.</th>
+                  <th scope="col">User Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Role</th>
+                  <th scope="col">Many_Ins</th>
+                  <th scope="col">S. Date</th>
+                  <th scope="col">E. Date</th>
+                  <th scope="col">P. Status</th>
+                  <th scope="col">P. Type</th>
+                  <th scope="col">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Dynamically Populated Rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="editDiv" class="modal fade" tabindex="-1" role="dialog">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content modelbgc">
+              <div class="modal-header">
+                <h5 class="modal-title">Edit User</h5>
+                <button type="button" class="close" id="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <form id="editForm">
+                  <div class="form-group">
+                    <label for="username">User Name</label>
+                    <input type="text" class="form-control" id="username" placeholder="Enter User Name">
+                  </div>
+                  <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" class="form-control" id="email" placeholder="Enter Email">
+                  </div>
+                  <div class="form-group">
+                    <label for="role">Role</label>
+                    <input type="text" class="form-control" id="role" placeholder="Enter Role">
+                  </div>
+                  <div class="form-group">
+                    <label for="manyInstance">Many Instances</label>
+                    <input type="number" class="form-control" id="manyInstance" placeholder="Enter Many Instances">
+                  </div>
+                  <div class="form-group">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" class="form-control" id="startDate" name="startDate">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="endDate">End Date</label>
+                    <input type="date" class="form-control" id="endDate" name="endDate">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="status">Plan Status</label>
+                    <input type="text" class="form-control" id="planStatus" placeholder="Enter P. Status">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="pType">Plan Type</label>
+                    <input type="text" class="form-control" id="planType" placeholder="Enter P. Type">
+                  </div>
+                </form>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="clo" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="submitBtn">Submit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Create New User Modal -->
+        <div id="newUserModal" class="modal fade" tabindex="-1" role="dialog">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content modelbgc">
+              <!-- Modal Header -->
+              <div class="modal-header">
+                <h5 class="modal-title">Create New User</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="clos">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+
+              <!-- Modal Body -->
+              <div class="modal-body">
+                <form id="newUserForm">
+                  <div class="form-group">
+                    <label for="newUsername">User Name</label>
+                    <input type="text" class="form-control" id="newUsername" placeholder="Enter User Name" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="newEmail">Email</label>
+                    <input type="email" class="form-control" id="newEmail" placeholder="Enter Email" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" class="form-control" id="newPassword" placeholder="New Password" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="newRole">Role</label>
+                    <select class="form-select" id="newRole" name="newRole" required>
+                      <option value="">Please Select Role</option>
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+
+
+
+                  <div class="form-group">
+                    <label for="newManyInstance">Many Instances</label>
+                    <input type="number" class="form-control" id="newManyInstance" placeholder="Enter Many Instances"
+                      required>
+                  </div>
+                  <div class="form-group">
+                    <label for="newStartDate">Start Date</label>
+                    <input type="date" class="form-control" id="newStartDate" name="newStartDate" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="newEndDate">End Date</label>
+                    <input type="date" class="form-control" id="newEndDate" name="newEndDate" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="newPlanStatus">Plan Status</label>
+                    <input type="text" class="form-control" id="newPlanStatus" placeholder="Enter Plan Status" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="newPlanType">Plan Type</label>
+                    <input type="text" class="form-control" id="newPlanType" placeholder="Enter Plan Type" required>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Modal Footer -->
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="closee">Close</button>
+                <button type="button" class="btn btn-primary" id="createUserBtn">Submit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- JavaScript to Handle Form Submission -->
+        <script>
+
+
+        </script>
+
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card mb-4 shadow-sm">
+              <div class="card-body modelbgc">
+
+
+                <h5 class="card-title">Card Title 1</h5>
+                <p class="card-text">This is a description for Card 1.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card mb-4 shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">Card Title 2</h5>
+                <p class="card-text">This is a description for Card 2.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-dark fix text-white text-center py-3">
+    <p>&copy; 2024 MyApp. All Rights Reserved.</p>
+  </footer>
+
+  <!-- Bootstrap Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- DataTables JS -->
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+  <!-- Custom JS -->
+  <script src="/js/script.js"></script>
+</body>
+
+</html>
