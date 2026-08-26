@@ -86,11 +86,13 @@ exports.editar = async (req, res) => {
     const index = sessions.findIndex(session => session.key === key);
 
     if (index !== -1) {
-        sessions[index] = { key, ignoreGroups, webhook, base64, webhookUrl, browser, webhookEvents, messagesRead, ignoreGroups };
+        sessions[index] = { key, ignoreGroups, webhook, base64, webhookUrl, browser, webhookEvents, messagesRead };
         await fs.writeFile(filePath, JSON.stringify(sessions, null, 2), 'utf-8');
 
         const instance = WhatsAppInstances[key];
-        const data = await instance.init();
+        if (instance) {
+            await instance.init();
+        }
         res.json({
             error: false,
             message: 'Instance edited',
@@ -121,7 +123,7 @@ exports.getcode = async (req, res) => {
             });
         } else {
             const instance = WhatsAppInstances[req.query.key];
-            data = await instance.getInstanceDetail(req.body.key);
+            const data = await instance.getInstanceDetail(req.body.key);
 
             if (data.phone_connected === true) {
                 return res.json({
@@ -146,27 +148,12 @@ exports.getcode = async (req, res) => {
 };
 
 exports.ativas = async (req, res) => {
-    if (req.query.active) {
-        let instance = [];
-        const db = mongoClient.db('whatsapp-api');
-        const result = await db.listCollections().toArray();
-        result.forEach((collection) => {
-            instance.push(collection.name);
-        });
-
-        return res.json({
-            data: instance
-        });
-    }
-
     let instance = Object.keys(WhatsAppInstances).map(async (key) =>
         WhatsAppInstances[key].getInstanceDetail(key)
     );
     let data = await Promise.all(instance);
 
-    return {
-        data: data
-    };
+    return { data: data };
 };
 
 exports.qr = async (req, res) => {
@@ -349,9 +336,8 @@ exports.delete = async (req, res) => {
         });
     } else {
         return res.json({
-            error: false,
-            message: 'Instance deleted successfully',
-            data: errormsg ? errormsg : null,
+            error: true,
+            message: 'Instance not found',
         });
     }
 };

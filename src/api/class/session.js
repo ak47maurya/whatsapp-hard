@@ -31,15 +31,14 @@ class Session {
 			
 
             
-            allSessions.forEach(async (sessionData) => {
-				
+            for (const sessionData of allSessions) {
                 const { key, webhook, webhookUrl } = sessionData;
                 const instance = new WhatsAppInstance(key, webhook, webhookUrl);
                 await instance.init();
                 WhatsAppInstances[key] = instance;
                 restoredSessions.push(key);
 				await sleep(150);
-            });
+            }
         } catch (e) {
             logger.error('Error restoring sessions');
             logger.error(e);

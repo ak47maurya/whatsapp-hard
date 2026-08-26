@@ -18,10 +18,10 @@ router.route('/text').post(keyVerify, loginVerify, controller.Text)
 router.route('/image').post(keyVerify, loginVerify, upload, controller.Image)
 router
     .route('/sendurlfile')
-    .post(keyVerify, loginVerify, upload, controller.sendurlfile)
+    .post(keyVerify, loginVerify, controller.sendurlfile)
 router
     .route('/sendbase64file')
-    .post(keyVerify, loginVerify, upload, controller.sendbase64file)
+    .post(keyVerify, loginVerify, controller.sendbase64file)
 router
     .route('/imagefile')
     .post(keyVerify, loginVerify, upload, controller.imageFile)

@@ -435,8 +435,12 @@ exports.instanceSendToDelay = async (req, res) => {
         const Token_Id = req.body.Token_Id;
         const toDelay = req.body.toDelay;
         if (!Token_Id || !toDelay) {
+            return res.status(400).json({
+                error: true,
+                message: 'Token_Id and toDelay are required',
+            });
         }
-        const dealyRes = UserService.addInstanceDealy(user._id, Token_Id, toDelay)
+        const dealyRes = await UserService.addInstanceDealy(user._id, Token_Id, toDelay)
         return res.status(200).json({
             error: false,
             success: 'success',

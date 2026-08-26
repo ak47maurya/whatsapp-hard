@@ -245,9 +245,9 @@ class UserService {
     }
 }
 
-const extractMessageFields = (message) => {
-    var { options, groupOptions, id, message, typeId, type, url } = message._doc
-    return { options, groupOptions, id, typeId, message, type, url }
+const extractMessageFields = (msg) => {
+    var { options, groupOptions, id, message, typeId, type, url, base64 } = msg._doc
+    return { options, groupOptions, id, typeId, message, type, url, base64 }
 }
 
 // Function to send a message
@@ -256,11 +256,23 @@ async function sendMessage(message) {
         const tokenId = message.tokenId
         const delay = message.options?.delay || 0
         const messageFeild = extractMessageFields(message)
+        messageFeild.id = message.id
+        messageFeild.typeId = message.typeId
         let data
         if (message.url) {
             data = await WhatsAppInstances[tokenId].sendMediaFile(
                 messageFeild,
                 'url'
+            )
+        } else if (message.base64) {
+            data = await WhatsAppInstances[tokenId].sendMediaFile(
+                messageFeild,
+                'base64'
+            )
+        } else if (message.file) {
+            data = await WhatsAppInstances[tokenId].sendMediaFile(
+                messageFeild,
+                'file'
             )
         } else {
             data =
@@ -276,7 +288,7 @@ async function sendMessage(message) {
 // Function to process messages for a specific instance
 async function processInstanceMessages(instanceId) {
     // Get message sending limit for this instance from User table
-    const user = await User.findOne({ 'insdetails.tokenId': instanceId })
+    const user = await User.findOne({ 'insdetails.Token_Id': instanceId })
     const messageLimit = user?.insdetails?.messageQty || 1000 // Default to 1000 if not set
     const batchSize = Math.floor(messageLimit / 60) // Messages per minute
     const messages = await Message.find({

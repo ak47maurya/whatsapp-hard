@@ -1,6 +1,7 @@
 const Message = require('../models/message.model.js')
 const User = require('../models/user.model.js')
-const { WhatsAppInstances } = require('./whatsappInstances.js')
+// Use global WhatsAppInstances (set in express.js)
+const WhatsAppInstances = global.WhatsAppInstances
 
 const MIN_DELAY = 10
 const MAX_DELAY = 20
@@ -17,15 +18,20 @@ async function sendMessage(message) {
         const delay = message.options?.delay || 0
         let data
 
-        if (message.url) {
+        if (message.url && message.type === 'url') {
             data = await WhatsAppInstances[tokenId].sendMediaFile(
                 message,
                 'url'
             )
+        } else if (message.base64 && message.type === 'base64') {
+            data = await WhatsAppInstances[tokenId].sendMediaFile(
+                message,
+                'base64'
+            )
         } else if (message.file && message.type) {
             data = await WhatsAppInstances[tokenId].sendMediaFile(
                 message,
-                message.type
+                'file'
             )
         } else {
             data = await WhatsAppInstances[tokenId].sendTextMessage(message)

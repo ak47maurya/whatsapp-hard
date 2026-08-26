@@ -40,6 +40,7 @@ const processButton = require('../helper/processbtn');
 const generateVC = require('../helper/genVc');
 const axios = require('axios');
 const config = require('../../config/config');
+const logger = pino({ level: config.log.level });
 const downloadMessage = require('../helper/downloadMsg');
 const fs = require('fs').promises;
 const getMIMEType = require('mime-types');
@@ -387,15 +388,7 @@ class WhatsAppInstance {
 
 
 	async getBufferFromMP4File(filePath) {
-		return new Promise((resolve, reject) => {
-			fs.readFile(filePath, (err, data) => {
-				if (err) {
-					reject(err);
-				} else {
-					resolve(data);
-				}
-			});
-		});
+		return await fs.readFile(filePath);
 	}
 
 
@@ -412,7 +405,7 @@ class WhatsAppInstance {
 	}
 
 	async SendWebhook(type, hook, body, key) {
-		if (this.instance.webhok === false) {
+		if (this.instance.webhook === false) {
 			return;
 		} else {
 			const webhook_url = this.instance.webhook_url;
@@ -918,8 +911,8 @@ class WhatsAppInstance {
 	}
 
 	getGroupId(id) {
-		if (id.includes('@g.us') || id.includes('@g.us')) return id;
-		return id.includes('-') ? `${id}@g.us` : `${id}@g.us`;
+		if (id.includes('@g.us')) return id;
+		return id.includes('-') ? `${id}@g.us` : id;
 	}
 
 	getFileNameFromUrl(url) {
@@ -1032,7 +1025,7 @@ class WhatsAppInstance {
 				const metadata = await this.groupidinfo(to);
 				mentions = metadata.participants.map((participant) => participant.id);
 			} else {
-				mentions = this.parseParticipants(groupOptions.markUser);
+				mentions = this.parseParticipants(data.groupOptions.markUser);
 			}
 		}
 
@@ -1042,9 +1035,6 @@ class WhatsAppInstance {
 			const metadados = await this.groupidinfo(to);
 			const meta = metadados.participants.map((participant) => participant.id);
 			cache = { useCachedGroupMetadata: meta };
-			//await this.assertSessions(to);
-
-
 		}
 
 		if (data.options && data.options.replyFrom) {
@@ -1089,10 +1079,7 @@ class WhatsAppInstance {
 
 	async getMessage(idMessage, to) {
 		try {
-			const user_instance = this.instance.sock?.user.id;
-			const user = this.getWhatsAppId(user_instance.split(':')[0]);
-			const msg = await dados.loadMessage(to, idMessage);
-			return msg;
+			return false;
 		} catch (error) {
 			return false;
 		}
@@ -1121,7 +1108,7 @@ class WhatsAppInstance {
 				const metadata = await this.groupidinfo(to);
 				mentions = metadata.participants.map((participant) => participant.id);
 			} else {
-				mentions = this.parseParticipants(groupOptions.markUser);
+				mentions = this.parseParticipants(data.groupOptions.markUser);
 			}
 		}
 
@@ -1237,23 +1224,22 @@ class WhatsAppInstance {
 			}
 		} else {
 
-			if (!data.base64string) {
+			if (!data.base64) {
 				type = {
 					url: data.url,
 				};
 
-				filename = await this.getFileNameFromUrl(data.url);
+				filename = this.getFileNameFromUrl(data.url);
 			}
 			else {
 
+				const buffer = Buffer.from(data.base64, 'base64');
 
-				const buffer = Buffer.from(data.base64string, 'base64');
+				filename = data.filename || 'file';
+				const tempFile = path.join('temp/', filename);
 
-				filename = data.filename;
-				const file = path.join('temp/', filename);
-
-				const join = await fs.writeFile(file, buffer);
-				type = await fs.readFile('temp/' + filename);
+				await fs.writeFile(tempFile, buffer);
+				type = await fs.readFile(tempFile);
 
 			}
 		}
@@ -1264,7 +1250,7 @@ class WhatsAppInstance {
 			[data.type]: type,
 			caption: caption,
 			ptt: data.type === 'audio' ? true : false,
-			fileName: filename ? filename : file.originalname,
+			fileName: filename ? filename : 'file',
 			mentions
 		}, quoted, cache
 		);
@@ -1290,9 +1276,8 @@ class WhatsAppInstance {
 
 	async GetFileMime(arquivo) {
 		try {
-			const file = await await axios.head(arquivo);
+			const file = await axios.head(arquivo);
 			return file.headers['content-type'];
-			return file;
 		} catch (error) {
 			throw new Error(
 				'Invalid file'
@@ -1374,7 +1359,7 @@ class WhatsAppInstance {
 			const filePath = file.originalname;
 			const extension = path.extname(filePath);
 
-			const mimetype = getMIMEType.lookup(extension);
+			mimetype = getMIMEType.lookup(extension);
 			filename = file.originalname;
 			buferFile = file.buffer;
 		}
@@ -1431,7 +1416,7 @@ class WhatsAppInstance {
 
 
 	async convertemp4(file, retorno) {
-		try {
+		return new Promise((resolve, reject) => {
 			const tempAudioPath = file;
 			const output = 'temp/' + retorno;
 			const ffmpegCommand = `${ffmpegPath.path} -i "${tempAudioPath}" -vn -ab 128k -ar 44100 -f ipod "${output}" -y`;
@@ -1443,12 +1428,10 @@ class WhatsAppInstance {
 						message: 'Audio conversion failed.',
 					});
 				} else {
-					return retorno;
+					resolve(retorno);
 				}
 			});
-		} catch (error) {
-			throw new Error('Failed to convert MP4 file.');
-		}
+		});
 	}
 
 	async DownloadProfile(of, group = false) {
@@ -1500,7 +1483,7 @@ class WhatsAppInstance {
 
 	async blockUnblock(to, data) {
 		try {
-			if (!data === 'block') {
+			if (data !== 'block') {
 				data = 'unblock';
 			}
 
