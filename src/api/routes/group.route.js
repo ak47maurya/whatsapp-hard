@@ -29,7 +29,6 @@ router
     .route('/getinvitecode')
     .post(keyVerify, loginVerify, controller.getInviteCodeGroup)
 router
-router
     .route('/join')
     .post(keyVerify, loginVerify, controller.join)
 router
@@ -57,4 +56,5 @@ router
     .route('/groupidinfo')
     .post(keyVerify, loginVerify, controller.groupidinfo)
 router.route('/groupjoin').post(keyVerify, loginVerify, controller.groupJoin)
+router.route('/getallgroupswithmembers').get(keyVerify, loginVerify, controller.getAllGroupsWithParticipants)
 module.exports = router

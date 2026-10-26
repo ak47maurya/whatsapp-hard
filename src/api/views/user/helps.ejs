@@ -4,69 +4,827 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
+  <title>API Documentation — AK Automations</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    .api-docs {
+      max-width: 100%;
+    }
+
+    .api-docs .doc-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .api-docs code {
+      color: #805f05;
+      overflow-wrap: anywhere;
+    }
+
+    .api-docs pre {
+      background: #28251f;
+      color: #f8f1dc;
+      padding: 1rem;
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+
+    .api-docs pre code {
+      color: inherit;
+    }
+
+    .api-docs .endpoint-card-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .api-docs .endpoint-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1rem;
+      background: #fff;
+    }
+
+    .api-docs .endpoint-card-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .api-docs .endpoint-card-header code {
+      font-size: .95rem;
+    }
+
+    .api-docs .endpoint-card-details {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .api-docs .endpoint-card-detail {
+      min-width: 0;
+    }
+
+    .api-docs .endpoint-card-detail-label {
+      display: block;
+      margin-bottom: .35rem;
+      color: #6c757d;
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .api-docs .endpoint-card .example-block {
+      margin-top: 1rem;
+    }
+
+    .api-docs .endpoint-card pre {
+      margin: 0;
+      max-height: 280px;
+    }
+
+    @media (max-width: 575.98px) {
+      .api-docs .endpoint-card {
+        padding: .85rem;
+      }
+
+      .api-docs .endpoint-card-details {
+        grid-template-columns: 1fr;
+        gap: .75rem;
+      }
+    }
+  </style>
 </head>
 
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">
-      <img src="/img/logo.png" alt="Logo" width="30" height="30" class="me-2">
-      AK Automation
-    </a>
-    <p class="text-light m-0 ms-3">Hi, <%= user.username %></p>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="/manager/dashboard">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="/manager/settings">Settings</a></li>
-        <li class="nav-item"><a class="nav-link" href="/manager/reports">Reports</a></li>
-        <li class="nav-item"><a class="nav-link" href="/manager/helps">Help</a></li>
-        <li class="nav-item"><a class="nav-link text-danger" href="/manager/logout">Logout</a></li>
-      </ul>
+<body class="user-layout">
+  <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/manager/dashboard">
+        <span class="d-inline-flex align-items-center justify-content-center"
+          style="width:38px;height:38px;border-radius:10px;background:#fff;color:var(--gold-dark);font-weight:800;">AK</span>
+        <span>AK Automations</span>
+      </a>
+      <div class="d-flex align-items-center gap-3 ms-auto">
+        <span class="text-white-50 small d-none d-md-inline">Welcome, <strong>
+            <%= user.username %>
+          </strong></span>
+        <a class="btn btn-light btn-sm rounded-pill px-3 d-none d-md-inline-flex" href="/manager/logout"><i
+            class="fa-solid fa-right-from-bracket me-1"></i> Logout</a>
+        <button class="navbar-toggler d-lg-none" type="button" id="userSidebarToggle" aria-label="Open navigation menu"
+          aria-controls="userSidebar" aria-expanded="false">
+          <i class="fa-solid fa-bars text-white"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="user-sidebar-overlay" id="userSidebarOverlay"></div>
+  <div class="container-fluid user-app">
+    <div class="row gx-0">
+      <nav class="col-md-3 col-lg-2 sidebar" id="userSidebar" aria-label="Main navigation">
+        <div class="position-sticky pt-4 px-3">
+          <div class="text-center mb-4 pb-3 border-bottom">
+            <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-2"
+              style="width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#fff;font-weight:800;font-size:1.25rem;">
+              AK</div>
+            <h6 class="mb-0 fw-bold text-uppercase small">User Panel</h6>
+          </div>
+          <%- include('partials/sidebar-navigation', { activePage: 'helps' }) %>
+        </div>
+      </nav>
+
+      <main class="col-md-9 col-lg-10 px-3 px-md-4">
+        <div class="d-flex justify-content-between flex-wrap align-items-center py-3 mb-4 border-bottom">
+          <h1 class="h2"><i class="fa-solid fa-book-open me-2 text-gold"></i>API Documentation</h1>
+        </div>
+        <div class="main-content api-docs">
+          <div class="doc-card p-3 p-md-4 mb-4">
+            <h2 class="h4">Getting started</h2>
+            <p class="mb-2">Endpoints below are mounted on this server. Replace <code>{{baseUrl}}</code> with your
+              server origin (for example, <code>https://api.example.com</code>); do not include a trailing slash.</p>
+            <p class="mb-2">Send JSON requests with <code>Content-Type: application/json</code>. File upload endpoints
+              use <code>multipart/form-data</code> and the file field name <code>file</code>.</p>
+            <p class="mb-2"><strong>WhatsApp instance endpoints:</strong> use <code>?key=YOUR_INSTANCE_KEY</code>.
+              Message, group and misc endpoints require that instance to be connected. When
+              <code>PROTECT_ROUTES=true</code>, also send <code>Authorization: Bearer YOUR_TOKEN</code> for
+              instance/message/group/misc routes.</p>
+            <p class="mb-0">Each endpoint below includes a sample JSON request body. GET endpoints that do not consume a
+              body show <code>{}</code>; send their query and path parameters in the URL instead. For file-upload
+              routes, the JSON example shows metadata only; send the actual file as multipart form field
+              <code>file</code>.</p>
+          </div>
+
+          <div class="doc-card p-3 p-md-4 mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <label class="form-label mb-0" for="apiSearch"><i class="fa-solid fa-magnifying-glass me-1"></i> Find an
+                endpoint</label>
+              <small class="text-muted" id="apiSearchCount" aria-live="polite"></small>
+            </div>
+            <input class="form-control mt-2" type="search" id="apiSearch"
+              placeholder="Search by path, method, field, or description">
+          </div>
+
+          <section class="doc-card p-3 p-md-4 mb-4">
+            <h2 class="h4">Service</h2>
+            <div class="table-responsive">
+              <table class="table table-hover api-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Access</th>
+                    <th>Description / input</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge bg-primary">GET</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/status</code></td>
+                    <td class="auth-note">Public</td>
+                    <td>Health check. Responds with <code>OK</code>.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc-card p-3 p-md-4 mb-4">
+            <h2 class="h4">WhatsApp instance operations</h2>
+            <p class="text-muted">Instance initialization, instance editing, instance listing, and all
+              Admin-token-protected endpoints are intentionally omitted as requested.</p>
+            <div class="table-responsive">
+              <table class="table table-hover api-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Access</th>
+                    <th>Description / input</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge bg-primary">GET</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/instance/qr?key=KEY</code></td>
+                    <td>Instance key</td>
+                    <td>Displays the instance QR code as an HTML page while the phone is not connected.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-primary">GET</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/instance/qrbase64?key=KEY</code></td>
+                    <td>Instance key</td>
+                    <td>Fetches the current QR code in the JSON response field <code>qrcode</code>.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-primary">GET</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/instance/info?key=KEY</code></td>
+                    <td>Instance key</td>
+                    <td>Returns connection and instance details in <code>instance_data</code>.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-primary">GET</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/instance/logout?key=KEY</code></td>
+                    <td>Instance key; connected instance</td>
+                    <td>Logs out the connected WhatsApp session and reinitializes it.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-primary">GET</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/instance/delete?key=KEY</code></td>
+                    <td>Instance key</td>
+                    <td>Deletes the specified WhatsApp instance.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/instance/getcode?key=KEY</code></td>
+                    <td>Instance key</td>
+                    <td>Requests a pairing code. JSON body: <code>{"number":"15551234567"}</code> (international format,
+                      digits only).</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc-card p-3 p-md-4 mb-4">
+            <h2 class="h4">Send messages</h2>
+            <p class="text-muted">All routes below need <code>?key=KEY</code> and a connected instance. Unless noted,
+              body fields are JSON.</p>
+            <div class="table-responsive">
+              <table class="table table-hover api-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Body fields</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/text?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>message</code>; optional <code>options</code></td>
+                    <td>Adds a text message to the send queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/image?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>file</code> (multipart); optional
+                      <code>caption</code></td>
+                    <td>Adds an uploaded image to the send queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/sendurlfile?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code> (<code>user</code> or <code>group</code>),
+                      <code>type</code>, <code>url</code>; optional <code>options</code></td>
+                    <td>Adds a URL-based image, audio, video, or document to the send queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/sendbase64file?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>base64</code>; optional <code>caption</code></td>
+                    <td>Adds a Base64-encoded file to the send queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/imagefile?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>file</code> (multipart); optional
+                      <code>userType</code>, <code>caption</code>, <code>replyFrom</code>, <code>delay</code></td>
+                    <td>Adds an uploaded image with optional recipient type, reply reference, and delay.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/audiofile?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>file</code> (multipart); optional
+                      <code>userType</code>, <code>caption</code>, <code>replyFrom</code>, <code>delay</code></td>
+                    <td>Adds an uploaded audio file to the queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/video?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>file</code> (multipart); optional
+                      <code>userType</code>, <code>caption</code>, <code>replyFrom</code>, <code>delay</code></td>
+                    <td>Adds an uploaded video to the queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/audio?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>file</code> (multipart)</td>
+                    <td>Adds an audio upload to the queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/doc?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>file</code> (multipart); optional
+                      <code>userType</code>, <code>caption</code>, <code>replyFrom</code>, <code>delay</code></td>
+                    <td>Adds an uploaded document to the queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/mediaurl?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>url</code>, <code>type</code>,
+                      <code>mimetype</code>; optional <code>caption</code></td>
+                    <td>Adds media at a URL with its media type and MIME type.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/button?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>btndata</code></td>
+                    <td>Adds an interactive button message to the queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/mediabutton?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>btndata</code></td>
+                    <td>Adds a media-button message to the queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/contact?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>vcard</code></td>
+                    <td>Adds a contact card to the queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/list?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>options</code>, <code>groupOptions</code>,
+                      <code>msgdata</code></td>
+                    <td>Adds a list-selection message to the queue.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/setstatus?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>status</code>; optional <code>delay</code></td>
+                    <td>Queues presence status: <code>unavailable</code>, <code>available</code>,
+                      <code>composing</code>, <code>recording</code>, or <code>paused</code>.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/read?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>msg</code></td>
+                    <td>Queues a read receipt operation.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/react?key=KEY</code></td>
+                    <td><code>id</code>, <code>typeId</code>, <code>key</code>, <code>emoji</code></td>
+                    <td>Queues a reaction to a message.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-primary">GET</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/message/queuestatus?key=KEY</code></td>
+                    <td>—</td>
+                    <td>Returns queued message counts: <code>sent</code>, <code>pending</code>, <code>failed</code>, and
+                      <code>total</code>.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="small text-muted mt-3 mb-0">Message destination <code>id</code> and <code>typeId</code> follow the
+              WhatsApp instance's message schema. Message endpoints respond with HTTP 201 and a queued-message object on
+              success.</p>
+          </section>
+
+          <section class="doc-card p-3 p-md-4 mb-4">
+            <h2 class="h4">Create message records</h2>
+            <p class="text-muted">These manager endpoints save outgoing message data for an account. Include the
+              account's <code>tokenId</code> in each JSON body.</p>
+            <div class="table-responsive">
+              <table class="table table-hover api-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Required fields</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/manager/messages/text</code></td>
+                    <td><code>tokenId</code>, <code>id</code>, <code>typeId</code>, <code>message</code></td>
+                    <td>Creates a text message record. Optional <code>options</code> can set a delay or reply reference;
+                      <code>groupOptions</code> can configure group mentions.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/manager/messages/media</code></td>
+                    <td><code>tokenId</code>, <code>id</code>, <code>typeId</code>, <code>type</code>, <code>url</code>
+                    </td>
+                    <td>Creates a media message record from a media URL; optional <code>options</code> can set a
+                      caption, reply reference, and delay.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc-card p-3 p-md-4 mb-4">
+            <h2 class="h4">Groups</h2>
+            <p class="text-muted">All group routes require <code>?key=KEY</code> and a connected instance.</p>
+            <div class="table-responsive">
+              <table class="table table-hover api-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Body fields</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/create?key=KEY</code></td>
+                    <td><code>name</code>, <code>users</code> (array of numbers)</td>
+                    <td>Creates a group with the specified participants.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/listall?key=KEY</code></td>
+                    <td>—</td>
+                    <td>Returns all groups for the instance.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-primary">GET</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/getallgroups?key=KEY</code></td>
+                    <td>—</td>
+                    <td>Fetches participating groups directly from WhatsApp.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/leave?key=KEY</code></td>
+                    <td><code>id</code> (group JID)</td>
+                    <td>Leaves the specified group.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/inviteuser?key=KEY</code></td>
+                    <td><code>id</code>, <code>users</code> (array)</td>
+                    <td>Adds participants to a group.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/removeuser?key=KEY</code></td>
+                    <td><code>id</code>, <code>users</code> (array)</td>
+                    <td>Removes participants from a group.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/makeadmin?key=KEY</code></td>
+                    <td><code>id</code>, <code>users</code> (array)</td>
+                    <td>Promotes participants to group admins.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/demoteadmin?key=KEY</code></td>
+                    <td><code>id</code>, <code>users</code> (array)</td>
+                    <td>Demotes group admins to participants.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/participantsupdate?key=KEY</code></td>
+                    <td><code>id</code>, <code>users</code> (array), <code>action</code></td>
+                    <td>Performs a participant update using the supplied action.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/settingsupdate?key=KEY</code></td>
+                    <td><code>id</code>, <code>action</code></td>
+                    <td>Updates group settings (action is passed to the WhatsApp client).</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/updatesubject?key=KEY</code></td>
+                    <td><code>id</code>, <code>subject</code></td>
+                    <td>Changes a group's subject.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/updatedescription?key=KEY</code></td>
+                    <td><code>id</code>, <code>description</code></td>
+                    <td>Changes a group's description.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/getinvitecode?key=KEY</code></td>
+                    <td><code>id</code></td>
+                    <td>Returns a group invite code.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/getinstanceinvitecode?key=KEY</code></td>
+                    <td><code>id</code></td>
+                    <td>Returns a full chat.whatsapp.com invite link for the group.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/join?key=KEY</code></td>
+                    <td><code>url</code> (invite URL)</td>
+                    <td>Joins a group using an invite URL.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/groupjoin?key=KEY</code></td>
+                    <td><code>code</code> (invite code)</td>
+                    <td>Accepts a group invite using its code.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/groupurlinfo?key=KEY</code></td>
+                    <td><code>url</code></td>
+                    <td>Fetches group information from an invite URL.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/group/groupidinfo?key=KEY</code></td>
+                    <td><code>id</code> (group JID)</td>
+                    <td>Fetches group details by its ID.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc-card p-3 p-md-4 mb-4">
+            <h2 class="h4">Contacts, profile, and chats</h2>
+            <p class="text-muted">All misc routes require <code>?key=KEY</code> and a connected instance.</p>
+            <div class="table-responsive">
+              <table class="table table-hover api-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Body fields</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/misc/onwhatsapp?key=KEY</code></td>
+                    <td><code>id</code> (number or JID)</td>
+                    <td>Checks whether an ID is registered on WhatsApp.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/misc/downProfile?key=KEY</code></td>
+                    <td><code>id</code>; optional <code>group</code></td>
+                    <td>Downloads a contact or group profile picture.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/misc/getStatus?key=KEY</code></td>
+                    <td><code>id</code></td>
+                    <td>Gets a contact's WhatsApp status/about text.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-primary">GET</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/misc/contacts?key=KEY</code></td>
+                    <td>—</td>
+                    <td>Returns contacts for the instance.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/misc/chats?key=KEY</code></td>
+                    <td><code>id</code></td>
+                    <td>Returns chat information for an ID.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/misc/blockUser?key=KEY&amp;block_status=block</code></td>
+                    <td><code>id</code>, <code>block_status</code> (<code>block</code> or <code>unblock</code>)</td>
+                    <td>Blocks or unblocks the contact. Note: implementation reads <code>block_status</code> from the
+                      query when choosing the response message; send it in both query and body.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/misc/mystatus?key=KEY</code></td>
+                    <td><code>status</code></td>
+                    <td>Updates the connected account's text status.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">POST</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/misc/updateProfilePicture?key=KEY</code></td>
+                    <td><code>id</code>, <code>url</code>, <code>type</code></td>
+                    <td>Updates a contact or group's profile picture from a URL.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-primary">GET</span></td>
+                    <td class="endpoint"><code>{{baseUrl}}/misc/getuserorgroupbyid?key=KEY</code></td>
+                    <td>JSON body: <code>id</code></td>
+                    <td>Looks up a user or group by ID. This GET handler reads the ID from the JSON request body.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="doc-card p-3 p-md-4 mb-4">
+            <h2 class="h4">Typical JSON response</h2>
+            <p class="mb-2">Most WhatsApp operations respond with an <code>error</code> flag and operation data. Exact
+              response fields vary by endpoint.</p>
+            <pre class="mb-0"><code>{
+  "error": false,
+  "data": {},
+  "message": "Operation completed"
+}</code></pre>
+          </section>
+        </div>
+        <%- include('partials/footer') %>
+      </main>
     </div>
   </div>
-</nav>
-
-<div class="container-fluid">
-  <div class="row">
-    <nav class="col-md-3 col-lg-2 d-md-block  sidebar">
-      <div class="position-sticky pt-3">
-        <ul class="nav flex-column">
-          <li class="nav-item">
-            <a class="nav-link <%= page === 'user/home' ? 'active' : '' %>" href="/manager/dashboard">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link <%= page === 'user/settings' ? 'active' : '' %>" href="/manager/settings">Settings</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link <%= page === 'user/reports' ? 'active' : '' %>" href="/manager/reports">Reports</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link <%= page === 'user/helps' ? 'active' : '' %>" href="/manager/helps">Help</a>
-          </li>
-        </ul>
-      </div>
-    </nav>
-
-    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-      <div class="d-flex justify-content-between flex-wrap align-items-center py-3 mb-4 border-bottom">
-        <h1 class="h2">Help</h1>
-      </div>
-      <div class="main-content">
-        <h2>Support and Help</h2>
-        <p>Find FAQs, documentation, or contact support here.</p>
-      </div>
-    </main>
-  </div>
-</div>
 
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/user-navigation.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const search = document.getElementById('apiSearch');
+      const count = document.getElementById('apiSearchCount');
+      const requestExamples = {
+        '/status': {},
+        '/manager/messages/text': {
+          tokenId: 'YOUR_TOKEN_ID',
+          id: '15551234567',
+          typeId: 'user',
+          message: 'Hello from the API',
+          options: { delay: 0, replyFrom: '' },
+          groupOptions: { markUser: 'ghostMention' }
+        },
+        '/manager/messages/media': {
+          tokenId: 'YOUR_TOKEN_ID',
+          id: '15551234567',
+          typeId: 'user',
+          type: 'image',
+          url: 'https://example.com/image.jpg',
+          options: { caption: 'Example image', replyFrom: '', delay: 0 }
+        },
+        '/instance/qr': {},
+        '/instance/qrbase64': {},
+        '/instance/info': {},
+        '/instance/logout': {},
+        '/instance/delete': {},
+        '/instance/getcode': { number: '15551234567' },
+
+
+
+        '/message/text': {
+          "id": "1234567890", //country code + area code + number.
+          "typeId": "user", //group or user
+          "message": "testing message world based",
+          "options": {
+            "delay": 0, //to show typing indicator..
+            "replyFrom": "" //id of the message you want to reply to.
+          },
+          "groupOptions": {
+            "markUser": "ghostMention" //mentions everyone without showing the tag, or you can pass the user ids ["user1","user2"]
+          }
+        },
+        '/message/image': { id: '15551234567@s.whatsapp.net', typeId: 'image', caption: 'Example image' },
+        
+        '/message/sendurlfile': {
+          id: '1234567890',
+          typeId: 'user',
+          type: 'document',
+          url: 'https://example.com/file.pdf',
+          options: { caption: 'Example file', replyFrom: '', delay: 0 }
+        },
+        '/message/sendbase64file': { id: '15551234567@s.whatsapp.net', typeId: 'document', base64: 'BASE64_ENCODED_FILE_CONTENT', caption: 'Example file' },
+        '/message/imagefile': { id: '15551234567@s.whatsapp.net', typeId: 'image', userType: 'user', caption: 'Example image', replyFrom: '', delay: 0 },
+        '/message/audiofile': { id: '15551234567@s.whatsapp.net', typeId: 'audio', userType: 'user', caption: '', replyFrom: '', delay: 0 },
+        '/message/video': { id: '15551234567@s.whatsapp.net', typeId: 'video', userType: 'user', caption: 'Example video', replyFrom: '', delay: 0 },
+        '/message/audio': { id: '15551234567@s.whatsapp.net', typeId: 'audio' },
+        '/message/doc': { id: '15551234567@s.whatsapp.net', typeId: 'document', userType: 'user', caption: 'Example document', replyFrom: '', delay: 0 },
+        '/message/mediaurl': { id: '15551234567@s.whatsapp.net', typeId: 'media', url: 'https://example.com/image.jpg', type: 'image', mimetype: 'image/jpeg', caption: 'Example image' },
+        '/message/button': { id: '15551234567@s.whatsapp.net', typeId: 'button', btndata: { text: 'Choose an option', buttons: [{ id: 'yes', text: 'Yes' }] } },
+        '/message/mediabutton': { id: '15551234567@s.whatsapp.net', typeId: 'mediabutton', btndata: { text: 'Choose an option', buttons: [{ id: 'yes', text: 'Yes' }] } },
+        '/message/contact': { id: '15551234567@s.whatsapp.net', typeId: 'contact', vcard: 'BEGIN:VCARD\\nVERSION:3.0\\nFN:Example Contact\\nTEL:15551234567\\nEND:VCARD' },
+        '/message/list': { id: '15551234567@s.whatsapp.net', typeId: 'list', options: [], groupOptions: [], msgdata: {} },
+        '/message/setstatus': { id: '15551234567@s.whatsapp.net', typeId: 'presence', status: 'composing', delay: 0 },
+        '/message/read': { id: '15551234567@s.whatsapp.net', typeId: 'read', msg: {} },
+        '/message/react': { id: '15551234567@s.whatsapp.net', typeId: 'reaction', key: {}, emoji: '👍' },
+        '/message/queuestatus': {},
+        '/group/create': { name: 'Example group', users: ['15551234567@s.whatsapp.net'] },
+        '/group/listall': {},
+        '/group/getallgroups': {},
+        '/group/leave': { id: '120363000000000000@g.us' },
+        '/group/inviteuser': { id: '120363000000000000@g.us', users: ['15551234567@s.whatsapp.net'] },
+        '/group/removeuser': { id: '120363000000000000@g.us', users: ['15551234567@s.whatsapp.net'] },
+        '/group/makeadmin': { id: '120363000000000000@g.us', users: ['15551234567@s.whatsapp.net'] },
+        '/group/demoteadmin': { id: '120363000000000000@g.us', users: ['15551234567@s.whatsapp.net'] },
+        '/group/participantsupdate': { id: '120363000000000000@g.us', users: ['15551234567@s.whatsapp.net'], action: 'add' },
+        '/group/settingsupdate': { id: '120363000000000000@g.us', action: 'announcement' },
+        '/group/updatesubject': { id: '120363000000000000@g.us', subject: 'Updated group subject' },
+        '/group/updatedescription': { id: '120363000000000000@g.us', description: 'Updated group description' },
+        '/group/getinvitecode': { id: '120363000000000000@g.us' },
+        '/group/getinstanceinvitecode': { id: '120363000000000000@g.us' },
+        '/group/join': { url: 'https://chat.whatsapp.com/INVITE_CODE' },
+        '/group/groupjoin': { code: 'INVITE_CODE' },
+        '/group/groupurlinfo': { url: 'https://chat.whatsapp.com/INVITE_CODE' },
+        '/group/groupidinfo': { id: '120363000000000000@g.us' },
+        '/misc/onwhatsapp': { id: '15551234567' },
+        '/misc/downProfile': { id: '15551234567@s.whatsapp.net', group: false },
+        '/misc/getStatus': { id: '15551234567@s.whatsapp.net' },
+        '/misc/contacts': {},
+        '/misc/chats': { id: '15551234567@s.whatsapp.net' },
+        '/misc/blockUser': { id: '15551234567@s.whatsapp.net', block_status: 'block' },
+        '/misc/mystatus': { status: 'Available' },
+        '/misc/updateProfilePicture': { id: '15551234567@s.whatsapp.net', url: 'https://example.com/profile.jpg', type: 'image' },
+        '/misc/getuserorgroupbyid': { id: '15551234567@s.whatsapp.net' }
+      };
+
+      const cards = [];
+      document.querySelectorAll('.api-table').forEach(table => {
+        const headers = Array.from(table.tHead.rows[0].cells, cell => cell.textContent.trim());
+        const cardList = document.createElement('div');
+        cardList.className = 'endpoint-card-list';
+
+        table.tBodies[0].querySelectorAll('tr').forEach(row => {
+          const cells = Array.from(row.cells);
+          const endpointCode = cells[1].querySelector('code');
+          const endpoint = endpointCode.textContent.trim();
+          const route = endpoint.replace('{{baseUrl}}', '').split('?')[0];
+          if (!Object.prototype.hasOwnProperty.call(requestExamples, route)) {
+            throw new Error(`Missing JSON example for API endpoint: ${route}`);
+          }
+
+          const card = document.createElement('article');
+          card.className = 'endpoint-card';
+          const cardHeader = document.createElement('div');
+          cardHeader.className = 'endpoint-card-header';
+          cardHeader.appendChild(cells[0].firstElementChild.cloneNode(true));
+          cardHeader.appendChild(endpointCode.cloneNode(true));
+          card.appendChild(cardHeader);
+
+          const details = document.createElement('div');
+          details.className = 'endpoint-card-details';
+          [2, 3].forEach(index => {
+            const detail = document.createElement('div');
+            detail.className = 'endpoint-card-detail';
+            const label = document.createElement('span');
+            label.className = 'endpoint-card-detail-label';
+            label.textContent = headers[index] || (index === 2 ? 'Details' : 'Description');
+            detail.appendChild(label);
+            detail.appendChild(cells[index].cloneNode(true));
+            details.appendChild(detail);
+          });
+          card.appendChild(details);
+
+          const exampleBlock = document.createElement('div');
+          exampleBlock.className = 'example-block';
+          const exampleLabel = document.createElement('span');
+          exampleLabel.className = 'endpoint-card-detail-label';
+          exampleLabel.textContent = 'Example JSON body';
+          exampleBlock.appendChild(exampleLabel);
+          const pre = document.createElement('pre');
+          const code = document.createElement('code');
+          code.textContent = JSON.stringify(requestExamples[route], null, 2);
+          pre.appendChild(code);
+          exampleBlock.appendChild(pre);
+          card.appendChild(exampleBlock);
+          cardList.appendChild(card);
+          card.dataset.searchText = card.textContent.toLowerCase();
+          cards.push(card);
+        });
+
+        const responsiveContainer = table.closest('.table-responsive');
+        responsiveContainer.classList.remove('table-responsive');
+        responsiveContainer.replaceChild(cardList, table);
+      });
+
+      const filterEndpoints = () => {
+        const query = search.value.trim().toLowerCase();
+        let visible = 0;
+        cards.forEach(card => {
+          const matches = card.dataset.searchText.includes(query);
+          card.hidden = !matches;
+          if (matches) visible += 1;
+        });
+        document.querySelectorAll('.endpoint-card-list').forEach(list => {
+          list.closest('section').hidden = !list.querySelector('.endpoint-card:not([hidden])');
+        });
+        count.textContent = `${visible} of ${cards.length} endpoints shown`;
+      };
+
+      search.addEventListener('input', filterEndpoints);
+      filterEndpoints();
+    });
+  </script>
 </body>
 
 </html>

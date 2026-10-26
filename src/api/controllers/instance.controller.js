@@ -3,7 +3,31 @@ const fs = require('fs').promises;
 const path = require('path');
 const config = require('../../config/config');
 const { Session } = require('../class/session');
+const { enforcePlanExpiry, getInstanceOwner } = require('../helper/planAccess');
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function getOrInitInstance(key) {
+    if (!key) return null;
+    let instance = WhatsAppInstances[key];
+    if (!instance) {
+        try {
+            const filePath = path.join('db/sessions.json');
+            const data = await fs.readFile(filePath, 'utf-8');
+            if (data) {
+                const sessions = JSON.parse(data);
+                const sessionData = sessions.find(s => s.key === key);
+                if (sessionData) {
+                    instance = new WhatsAppInstance(key, sessionData.webhook || false, sessionData.webhookUrl || false);
+                    await instance.init();
+                    WhatsAppInstances[key] = instance;
+                }
+            }
+        } catch (e) {
+            console.error('Error auto-init instance:', e.message);
+        }
+    }
+    return instance;
+}
 
 exports.init = async (req, res) => {
     let webhook = req.body.webhook || false;
@@ -15,6 +39,13 @@ exports.init = async (req, res) => {
     let base64 = req.body.base64 || false;
 
     const key = req.body.key;
+    const owner = key ? await getInstanceOwner(key) : null;
+    if (owner && await enforcePlanExpiry(owner)) {
+        return res.status(403).json({
+            error: true,
+            message: 'Plan expired. Renew your plan before starting an instance.',
+        });
+    }
     const filePath = path.join('db/sessions.json');
 
     const data = await fs.readFile(filePath, 'utf-8');
@@ -80,6 +111,13 @@ exports.editar = async (req, res) => {
     let base64 = req.body.base64 || false;
 
     const key = req.body.key;
+    const owner = key ? await getInstanceOwner(key) : null;
+    if (owner && await enforcePlanExpiry(owner)) {
+        return res.status(403).json({
+            error: true,
+            message: 'Plan expired. Renew your plan before reconnecting an instance.',
+        });
+    }
     const filePath = path.join('db/sessions.json');
     const data = await fs.readFile(filePath, 'utf-8');
     const sessions = JSON.parse(data);
@@ -121,28 +159,30 @@ exports.getcode = async (req, res) => {
                 error: true,
                 message: 'Invalid phone number'
             });
-        } else {
-            const instance = WhatsAppInstances[req.query.key];
-            const data = await instance.getInstanceDetail(req.body.key);
-
-            if (data.phone_connected === true) {
-                return res.json({
-                    error: true,
-                    message: 'Phone already connected'
-                });
-            } else {
-                const number = await WhatsAppInstances[req.query.key].getWhatsappCode(req.body.number);
-                const code = await WhatsAppInstances[req.query.key].instance?.sock?.requestPairingCode(number);
-                return res.json({
-                    error: false,
-                    code: code
-                });
-            }
         }
+        const key = req.query.key;
+        const instance = await getOrInitInstance(key);
+        if (!instance) {
+            return res.json({
+                error: true,
+                message: 'Instance not found'
+            });
+        }
+        const data = await instance.getInstanceDetail(key);
+
+        if (data && data.phone_connected === true) {
+            return res.json({
+                error: true,
+                message: 'Phone already connected'
+            });
+        }
+
+        const result = await instance.getWhatsappCode(req.body.number);
+        return res.json(result);
     } catch (e) {
         return res.json({
             error: true,
-            message: 'Instance not found'
+            message: e.message || 'Error generating pairing code'
         });
     }
 };
@@ -157,96 +197,91 @@ exports.ativas = async (req, res) => {
 };
 
 exports.qr = async (req, res) => {
-    const verifica = await exports.validar(req, res);
-    if (verifica == true) {
-        const instance = WhatsAppInstances[req.query.key];
-        let data;
-        try {
-            data = await instance.getInstanceDetail(req.query.key);
-        } catch (error) {
-            data = {};
-        }
-        if (data.phone_connected === true) {
-            return res.json({
-                error: true,
-                message: 'Phone already connected'
-            });
-        } else {
-            try {
-                const qrcode = await WhatsAppInstances[req.query.key]?.instance.qr;
-                res.render('qrcode', {
-                    qrcode: qrcode,
-                });
-            } catch {
-                res.json({
-                    qrcode: '',
-                });
-            }
-        }
-    } else {
+    const key = req.query.key;
+    const instance = await getOrInitInstance(key);
+    if (!instance) {
         return res.json({
             error: true,
             message: 'Instance not found'
         });
+    }
+    let data;
+    try {
+        data = await instance.getInstanceDetail(key);
+    } catch (error) {
+        data = {};
+    }
+    if (data.phone_connected === true) {
+        return res.json({
+            error: true,
+            message: 'Phone already connected'
+        });
+    } else {
+        try {
+            const qrcode = await instance.instance?.qr;
+            res.render('qrcode', {
+                qrcode: qrcode,
+            });
+        } catch {
+            res.json({
+                qrcode: '',
+            });
+        }
     }
 };
 
 exports.qrbase64 = async (req, res) => {
-    const verifica = await exports.validar(req, res);
-    if (verifica == true) {
-        const instance = WhatsAppInstances[req.query.key];
-        let data;
-        try {
-            data = await instance.getInstanceDetail(req.query.key);
-        } catch (error) {
-            data = {};
-        }
-        if (data.phone_connected === true) {
-            return res.json({
-                error: true,
-                message: 'Phone already connected'
-            });
-        } else {
-            try {
-                const qrcode = await WhatsAppInstances[req.query.key]?.instance.qr;
-                res.json({
-                    error: false,
-                    message: 'QR Base64 fetched successfully',
-                    qrcode: qrcode,
-                });
-            } catch {
-                res.json({
-                    qrcode: '',
-                });
-            }
-        }
-    } else {
+    const key = req.query.key;
+    const instance = await getOrInitInstance(key);
+    if (!instance) {
         return res.json({
             error: true,
             message: 'Instance not found'
         });
     }
-};
-
-exports.validar = async (req, res) => {
-    const verifica = await exports.ativas(req, res);
-    const existe = verifica.data.some(item => item.instance_key === req.query.key);
-    if (existe) {
-        return true;
+    let data;
+    try {
+        data = await instance.getInstanceDetail(key);
+    } catch (error) {
+        data = {};
+    }
+    if (data.phone_connected === true) {
+        return res.json({
+            error: true,
+            message: 'Phone already connected'
+        });
     } else {
-        return false;
+        try {
+            const qrcode = await instance.instance?.qr;
+            res.json({
+                error: false,
+                message: 'QR Base64 fetched successfully',
+                qrcode: qrcode || '',
+            });
+        } catch {
+            res.json({
+                error: false,
+                qrcode: '',
+            });
+        }
     }
 };
 
+exports.validar = async (req, res) => {
+    const key = req.query.key;
+    const instance = await getOrInitInstance(key);
+    return !!instance;
+};
+
 exports.info = async (req, res) => {
-    const verifica = await exports.validar(req, res);
-    if (verifica == true) {
-        const instance = WhatsAppInstances[req.query.key];
+    const key = req.query.key;
+    const instance = await getOrInitInstance(key);
+    if (instance) {
         let data;
         try {
-            data = await instance.getInstanceDetail(req.query.key);
+            data = await instance.getInstanceDetail(key);
         } catch (error) {
-            data = {};
+            data = { phone_connected: false };
         }
         return res.json({
             error: false,

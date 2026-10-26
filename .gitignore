@@ -1,13 +1,34 @@
-# NODE
-db
-node_modules
+# NODE & DEPENDENCIES
+node_modules/
 package-lock.json
 yarn.lock
 
-# APPLICATION
-# .env
-sessiondata
+# DATABASE & SESSIONS
+db/
+sessiondata/
+sessions/
+*.db
 
-# IDEs
-.vscode/settings.json
-.idea
+# ENVIRONMENT & SECRETS
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# TEMPORARY & CACHE
+temp/
+tmp/
+*.tmp
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

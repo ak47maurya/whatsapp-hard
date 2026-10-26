@@ -39,7 +39,7 @@ async function sendMessage(message) {
 
         console.log(`Message sent: ${data}`)
         await new Promise((resolve) => setTimeout(resolve, delay * 1000))
-        await Message.updateOne({ _id: message._id }, { status: 'sent' })
+        await Message.updateOne({ _id: message._id }, { status: 'sent', sentAt: new Date() })
     } catch (error) {
         console.error(`Failed to send message: ${error}`)
         await Message.updateOne({ _id: message._id }, { status: 'failed' })

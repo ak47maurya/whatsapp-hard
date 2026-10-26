@@ -2,6 +2,16 @@ const User = require('../models/user.model')
 const Message = require('../models/message.model')
 const cron = require('node-cron')
 const axios = require('axios')
+const { enforcePlanExpiry, isPlanExpired } = require('../helper/planAccess')
+const {
+    getUserPlan,
+    getUtcDay,
+    normalizePlanRecipient,
+    releaseUnusedPlanRecipients,
+    reserveDailyMessage,
+    reservePlanRecipients,
+    settleDailyMessage,
+} = require('../helper/plans')
 
 class MessageService {
     static async createMessage(messageData) {
@@ -33,7 +43,30 @@ class MessageService {
 
     static async deleteMessage(tokenId, messageId) {
         try {
+            const queuedMessage = await Message.findOne({
+                tokenId,
+                _id: messageId,
+                status: 'pending',
+            }).lean()
+            const owner = queuedMessage
+                ? await User.findOne({
+                      'insdetails.Token_Id': tokenId,
+                  }).select('_id')
+                : null
+            if (owner && queuedMessage?.planUsageDay) {
+                    await settleDailyMessage(
+                        owner._id,
+                        queuedMessage._id,
+                        queuedMessage.planUsageDay,
+                        false
+                    )
+            }
             await Message.findOneAndDelete({ _id: messageId, tokenId: tokenId })
+            if (owner && queuedMessage) {
+                await releaseUnusedPlanRecipients(owner._id, [
+                    normalizePlanRecipient(queuedMessage.id),
+                ])
+            }
             return 'Message deleted successfully'
         } catch (error) {
             throw error
@@ -42,7 +75,31 @@ class MessageService {
 
     static async deleteAllMessages(tokenId) {
         try {
+            const [owner, queuedMessages] = await Promise.all([
+                User.findOne({ 'insdetails.Token_Id': tokenId }).select('_id'),
+                Message.find({ tokenId, status: 'pending' }, '_id planUsageDay id').lean(),
+            ])
+            if (owner) {
+                for (const message of queuedMessages) {
+                    if (message.planUsageDay) {
+                        await settleDailyMessage(
+                            owner._id,
+                            message._id,
+                            message.planUsageDay,
+                            false
+                        )
+                    }
+                }
+            }
             await Message.deleteMany({ tokenId: tokenId })
+            if (owner) {
+                await releaseUnusedPlanRecipients(
+                    owner._id,
+                    queuedMessages.map(({ id }) =>
+                        normalizePlanRecipient(id)
+                    )
+                )
+            }
             return 'All messages deleted successfully'
         } catch (error) {
             throw error
@@ -250,10 +307,82 @@ const extractMessageFields = (msg) => {
     return { options, groupOptions, id, typeId, message, type, url, base64 }
 }
 
-// Function to send a message
 async function sendMessage(message) {
+    let owner
+    let usageDay = message.planUsageDay
+    let plan
+    let recipientNumber
     try {
+        owner = await User.findOne({
+            'insdetails.Token_Id': message.tokenId,
+        })
+        if (owner && await enforcePlanExpiry(owner)) {
+            if (usageDay) {
+                await settleDailyMessage(owner._id, message._id, usageDay, false)
+            }
+            await Message.updateOne(
+                { _id: message._id },
+                { status: 'failed', failureReason: 'Plan expired' }
+            )
+            return
+        }
+
         const tokenId = message.tokenId
+        const isDelivery = !['read', 'react', 'setstatus'].includes(message.type) &&
+            !message.statusType
+        if (owner && isDelivery) {
+            plan = await getUserPlan(owner)
+            recipientNumber = normalizePlanRecipient(message.id)
+            const contactReservation = await reservePlanRecipients(
+                owner._id,
+                [recipientNumber],
+                plan.maxUniqueRecipients
+            )
+            if (!contactReservation.allowed) {
+                if (usageDay) {
+                    await settleDailyMessage(owner._id, message._id, usageDay, false)
+                }
+                await Message.updateOne(
+                    { _id: message._id },
+                    { status: 'failed', failureReason: contactReservation.message }
+                )
+                return
+            }
+
+            const today = getUtcDay()
+            if (plan.dailyMessageLimit) {
+                if (usageDay && usageDay.getTime() !== today.getTime()) {
+                    await settleDailyMessage(
+                        owner._id,
+                        message._id,
+                        usageDay,
+                        false
+                    )
+                }
+                const reservation = await reserveDailyMessage(
+                    owner._id,
+                    message._id,
+                    plan.dailyMessageLimit
+                )
+                if (!reservation.allowed) {
+                    await Message.updateOne(
+                        { _id: message._id },
+                        { status: 'failed', failureReason: reservation.message }
+                    )
+                    if (plan.maxUniqueRecipients >= 0) {
+                        await releaseUnusedPlanRecipients(owner._id, [
+                            recipientNumber,
+                        ])
+                    }
+                    return
+                }
+                usageDay = reservation.day
+                await Message.updateOne(
+                    { _id: message._id },
+                    { $set: { planUsageDay: usageDay } }
+                )
+            }
+        }
         const delay = message.options?.delay || 0
         const messageFeild = extractMessageFields(message)
         messageFeild.id = message.id
@@ -279,36 +408,102 @@ async function sendMessage(message) {
                 await WhatsAppInstances[tokenId].sendTextMessage(messageFeild)
         }
         await new Promise((resolve) => setTimeout(resolve, delay * 1000))
-        await Message.updateOne({ _id: message._id }, { status: 'sent' })
+        await Message.updateOne(
+            { _id: message._id },
+            { status: 'sent', failureReason: '', sentAt: new Date() }
+        )
+        if (owner && plan?.maxUniqueRecipients >= 0 && recipientNumber) {
+            try {
+                await User.updateOne(
+                    { _id: owner._id },
+                    { $addToSet: { planSentRecipientNumbers: recipientNumber } }
+                )
+            } catch (error) {
+                console.error(
+                    `Message ${message._id} was delivered but its recipient usage could not be recorded:`,
+                    error.message
+                )
+            }
+        }
+        if (owner && usageDay) {
+            try {
+                await settleDailyMessage(owner._id, message._id, usageDay, true)
+            } catch (error) {
+                console.error(
+                    `Message ${message._id} was delivered but its plan usage could not be recorded:`,
+                    error.message
+                )
+            }
+        }
     } catch (error) {
-        await Message.updateOne({ _id: message._id }, { status: 'failed' })
+        const failureReason = error.response
+            ? `File request failed with HTTP ${error.response.status}`
+            : String(error.message || 'Unknown send error').replace(
+                  /https?:\/\/\S+/gi,
+                  '[URL]'
+              )
+        console.error(
+            `Failed to send queued message ${message._id}:`,
+            failureReason
+        )
+        await Message.updateOne(
+            { _id: message._id },
+            { status: 'failed', failureReason }
+        )
+        if (owner && usageDay) {
+            await settleDailyMessage(owner._id, message._id, usageDay, false)
+        }
+        if (owner && plan?.maxUniqueRecipients >= 0 && recipientNumber) {
+            try {
+                await releaseUnusedPlanRecipients(owner._id, [recipientNumber])
+            } catch (releaseError) {
+                console.error(
+                    `Failed to release recipient quota for message ${message._id}:`,
+                    releaseError.message
+                )
+            }
+        }
     }
 }
 
 // Function to process messages for a specific instance
 async function processInstanceMessages(instanceId) {
-    // Get message sending limit for this instance from User table
-    const user = await User.findOne({ 'insdetails.Token_Id': instanceId })
-    const messageLimit = user?.insdetails?.messageQty || 1000 // Default to 1000 if not set
-    const batchSize = Math.floor(messageLimit / 60) // Messages per minute
-    const messages = await Message.find({
-        tokenId: instanceId,
-        status: 'pending',
-    })
-        .limit(batchSize)
-        .sort({ createdAt: 1 })
-    for (const msg of messages) {
-        await sendMessage(msg)
+    if (processingInstances.has(instanceId)) return
+    if (global.WhatsAppInstances?.[instanceId]?.instance?.online !== true) return
+    processingInstances.add(instanceId)
+    try {
+        const user = await User.findOne({ 'insdetails.Token_Id': instanceId })
+        const messageLimit = user?.insdetails?.messageQty || 1000
+        const batchSize = Math.floor(messageLimit / 60)
+        const messages = await Message.find({
+            tokenId: instanceId,
+            status: 'pending',
+        })
+            .limit(batchSize)
+            .sort({ createdAt: 1 })
+        for (const msg of messages) {
+            await sendMessage(msg)
+        }
+    } finally {
+        processingInstances.delete(instanceId)
     }
 }
 
+const processingInstances = new Set()
+
 // Scheduler to process messages every minute
 setInterval(async () => {
-    console.log('Running message queue processing...')
-    // Get all unique instances with pending messages
-    const instances = await Message.distinct('tokenId', { status: 'pending' })
-    for (const instanceId of instances) {
-        processInstanceMessages(instanceId)
+    try {
+        const instances = await Message.distinct('tokenId', { status: 'pending' })
+        if (instances.length > 0) {
+            for (const instanceId of instances) {
+                processInstanceMessages(instanceId).catch(error => {
+                    console.error(`Failed to process message batch for ${instanceId}:`, error.message)
+                })
+            }
+        }
+    } catch (err) {
+        // quiet fail on queue check
     }
 }, 60000) // Runs every 60 seconds (1 minute)
 
@@ -316,27 +511,17 @@ setInterval(async () => {
 
 const checkExpiredAccounts = async () => {
     try {
-        const today = new Date()
-        // Find users whose endDate is before today and planStatus is not "Expired"
-        const expiredUsers = await User.find({
-            endDate: { $lt: today },
-            planStatus: { $ne: 'Expired' },
-        })
-        if (expiredUsers.length === 0) {
-            console.log('No expired accounts found.')
-            return
-        }
-        for (const user of expiredUsers) {
-            user.planStatus = 'Expired'
-            await user.save()
+        const users = await User.find()
+        for (const user of users.filter(user => isPlanExpired(user))) {
+            await enforcePlanExpiry(user)
         }
     } catch (error) {
         console.error('Error checking expired accounts:', error)
     }
 }
 
-// Run the function periodically (e.g., daily)
-setInterval(checkExpiredAccounts, 24 * 60 * 60 * 1000) // Runs once every 24 hours
+// Reconcile subscription expiry frequently so active sessions are disconnected promptly.
+setInterval(checkExpiredAccounts, 60 * 1000)
 checkExpiredAccounts()
 
-module.exports = { UserService, MessageService }
+module.exports = { UserService, MessageService, processInstanceMessages }

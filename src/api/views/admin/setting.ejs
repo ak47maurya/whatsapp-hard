@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Settings — AK Automations</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    :root {
+      --gold: #c9a227;
+      --gold-dark: #a9861d;
+      --gold-light: #e6c65c;
+      --gold-soft: #f7edd0;
+      --gold-bg: #fdfaf1;
+      --ink: #3a3222;
+      --ink-soft: #6b6353;
+      --line: #ecdfb8;
+    }
+    body { background: var(--gold-bg); color: var(--ink); font-family: 'Outfit', sans-serif; }
+    .navbar-gold { background: linear-gradient(135deg, var(--gold-light), var(--gold)) !important; }
+    .navbar-gold .navbar-brand { font-weight: 800; color: #fff !important; font-size: 1.1rem; }
+    .navbar-gold .navbar-brand img { filter: brightness(0) invert(1); }
+    .navbar-gold .nav-link { color: rgba(255,255,255,.9) !important; font-weight: 500; }
+    .navbar-gold .nav-link:hover { color: #fff !important; }
+    .sidebar { background: #fff; border-right: 1px solid var(--line); min-height: calc(100vh - 56px); }
+    .sidebar .nav-link { color: var(--ink-soft); border-radius: 10px; margin: 2px 12px; font-weight: 500; transition: all .25s; }
+    .sidebar .nav-link:hover { background: var(--gold-soft); color: var(--gold-dark); }
+    .sidebar .nav-link.active { background: var(--gold-soft); color: var(--gold-dark); font-weight: 600; }
+    .card-gold { background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(169,134,29,.08); }
+    .card-gold .card-header { background: var(--gold-soft); border-bottom: 1px solid var(--line); border-radius: 16px 16px 0 0; color: var(--ink); font-weight: 700; }
+    .btn-gold { background: linear-gradient(135deg, var(--gold-light), var(--gold)); border: none; color: #fff; font-weight: 600; border-radius: 50px; box-shadow: 0 6px 18px rgba(169,134,29,.3); }
+    .btn-gold:hover { color: #fff; filter: brightness(1.05); }
+    .btn-outline-gold { border: 1.5px solid var(--gold); color: var(--gold-dark); background: transparent; font-weight: 600; border-radius: 50px; }
+    .btn-outline-gold:hover { background: var(--gold); color: #fff; }
+    .form-control, .form-select { border: 1px solid var(--line); border-radius: 10px; background: #fffdf7; }
+    .form-control:focus, .form-select:focus { border-color: var(--gold); box-shadow: 0 0 0 .2rem rgba(201,162,39,.15); }
+    label { color: var(--ink); font-weight: 600; }
+    .footer-admin { background: #fff; border-top: 1px solid var(--line); color: var(--ink-soft); }
+    @media (max-width: 991.98px) {
+      .sidebar { position: fixed; top: 56px; left: 0; width: min(250px, 85vw); height: calc(100vh - 56px); min-height: 0; z-index: 1030; transform: translateX(-100%); transition: transform .3s; box-shadow: 0 8px 30px rgba(0,0,0,.1); }
+      .sidebar.show { transform: translateX(0); }
+      .sidebar-overlay { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.4); z-index: 1020; }
+      .sidebar-overlay.show { display: block; }
+      .container-fluid > .row > main { flex: 0 0 100%; max-width: 100%; margin-left: 0 !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/manager/dashboard">
+        <span class="d-inline-flex align-items-center justify-content-center" style="width:38px;height:38px;border-radius:10px;background:#fff;color:var(--gold-dark);font-weight:800;font-size:1rem;">AK</span>
+        <span>AK Automations Admin</span>
+      </a>
+      <div class="d-flex align-items-center gap-3 ms-auto">
+        <span class="text-white-50 small d-none d-md-inline">Welcome, <strong><%= user.username %></strong></span>
+        <div class="btn-group">
+          <button class="btn btn-light btn-sm dropdown-toggle rounded-pill px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa-solid fa-user-gear me-1"></i> Admin
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="/manager/settings"><i class="fa-solid fa-gear me-2"></i> Settings</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="/manager/logout"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a></li>
+          </ul>
+        </div>
+        <button class="btn btn-light btn-sm d-lg-none rounded-pill px-3" type="button" id="sidebarToggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="container-fluid mt-5 pt-2">
+    <div class="row">
+      <nav class="col-md-3 col-lg-2 d-md-block sidebar position-fixed position-md-static top-0 start-0 h-100" id="sidebar">
+        <div class="position-sticky pt-4 px-3" style="height: calc(100vh - 56px);">
+          <div class="text-center mb-4 pb-3 border-bottom">
+            <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-2" style="width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#fff;font-weight:800;font-size:1.25rem;">AK</div>
+            <h6 class="mb-0 fw-bold text-uppercase text-gold small">Admin Panel</h6>
+          </div>
+          <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link" href="/manager/dashboard"><i class="fa-solid fa-gauge-high me-2"></i> Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/manager/settings"><i class="fa-solid fa-gear me-2"></i> Settings</a></li>
+            <li class="nav-item"><a class="nav-link" href="/manager/reports"><i class="fa-solid fa-chart-line me-2"></i> Reports</a></li>
+            <li class="nav-item"><a class="nav-link" href="/manager/helps"><i class="fa-solid fa-circle-question me-2"></i> Help</a></li>
+            <li class="nav-item mt-3"><a class="nav-link text-danger" href="/manager/logout"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a></li>
+          </ul>
+        </div>
+      </nav>
+
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 ms-md-3">
+        <div class="d-flex justify-content-between flex-wrap align-items-center py-3 mb-4 border-bottom">
+          <h1 class="h2 mb-0 fw-bold"><i class="fa-solid fa-gear me-2 text-gold"></i>Admin Settings</h1>
+          <span class="text-muted small">Manage your admin profile and system preferences</span>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <div class="card card-gold h-100">
+              <div class="card-header"><i class="fa-solid fa-user-pen me-2"></i>Admin Profile</div>
+              <div class="card-body p-4">
+                <form id="profileForm">
+                  <div class="row g-3">
+                    <div class="col-md-12">
+                      <label class="form-label">Username</label>
+                      <input type="text" class="form-control" id="username" value="<%= user.username %>" required>
+                    </div>
+                    <div class="col-md-12">
+                      <label class="form-label">Email</label>
+                      <input type="email" class="form-control" id="email" value="<%= user.email %>" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Role</label>
+                      <input type="text" class="form-control" value="Admin" disabled>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Instances Limit</label>
+                      <input type="number" class="form-control" id="manyInstance" value="<%= user.manyInstance || 0 %>" min="1">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Plan Status</label>
+                      <select class="form-select" id="planStatus">
+                        <option value="Trial" <%= user.planStatus==='Trial'?'selected':'' %>>Trial</option>
+                        <option value="Active" <%= user.planStatus==='Active'?'selected':'' %>>Active</option>
+                        <option value="Expired" <%= user.planStatus==='Expired'?'selected':'' %>>Expired</option>
+                        <option value="Suspended" <%= user.planStatus==='Suspended'?'selected':'' %>>Suspended</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Plan Type</label>
+                      <input type="text" class="form-control" id="planType" value="<%= user.planType || '' %>">
+                    </div>
+                    <div class="col-12 text-end mt-3">
+                      <button type="submit" class="btn btn-gold px-4"><i class="fa-solid fa-floppy-disk me-2"></i>Update Profile</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <div class="card card-gold mb-4">
+              <div class="card-header"><i class="fa-solid fa-key me-2"></i>Change Password</div>
+              <div class="card-body p-4">
+                <form id="passwordForm">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <label class="form-label">New Password</label>
+                      <input type="password" class="form-control" id="newPassword" minlength="6" placeholder="Enter new password" required>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Confirm Password</label>
+                      <input type="password" class="form-control" id="confirmPassword" minlength="6" placeholder="Confirm new password" required>
+                    </div>
+                    <div class="col-12 text-end mt-3">
+                      <button type="submit" class="btn btn-outline-gold px-4"><i class="fa-solid fa-lock me-2"></i>Change Password</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div class="card card-gold">
+              <div class="card-header"><i class="fa-solid fa-shield-halved me-2"></i>System Info</div>
+              <div class="card-body p-4">
+                <div class="row g-3 small">
+                  <div class="col-md-6">
+                    <p class="mb-1 text-muted">User ID</p>
+                    <p class="mb-0 fw-semibold"><%= user._id %></p>
+                  </div>
+                  <div class="col-md-6">
+                    <p class="mb-1 text-muted">Start Date</p>
+                    <p class="mb-0 fw-semibold"><%= user.startDate ? new Date(user.startDate).toLocaleDateString('en-IN') : '-' %></p>
+                  </div>
+                  <div class="col-md-6">
+                    <p class="mb-1 text-muted">End Date</p>
+                    <p class="mb-0 fw-semibold"><%= user.endDate ? new Date(user.endDate).toLocaleDateString('en-IN') : '-' %></p>
+                  </div>
+                  <div class="col-md-6">
+                    <p class="mb-1 text-muted">Roles</p>
+                    <p class="mb-0 fw-semibold"><%= Array.isArray(user.role) ? user.role.join(', ') : user.role %></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <footer class="footer-admin py-3 mt-auto">
+    <div class="container-fluid text-center small">
+      &copy; 2025 AK Automations. All Rights Reserved.
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = document.getElementById('sidebarToggle');
+    if (toggle) {
+      toggle.addEventListener('click', () => { sidebar.classList.toggle('show'); overlay.classList.toggle('show'); });
+      overlay.addEventListener('click', () => { sidebar.classList.remove('show'); overlay.classList.remove('show'); });
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const data = {
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
+        manyInstance: parseInt(document.getElementById('manyInstance').value) || 0,
+        planStatus: document.getElementById('planStatus').value,
+        planType: document.getElementById('planType').value
+      };
+      try {
+        const res = await fetch(`/manager/users/<%= user._id %>`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        if (!res.ok) throw new Error('Update failed');
+        toastr.success('Profile updated successfully');
+      } catch { toastr.error('Failed to update profile'); }
+    });
+
+    document.getElementById('passwordForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const newPass = document.getElementById('newPassword').value;
+      const confirm = document.getElementById('confirmPassword').value;
+      if (newPass !== confirm) { toastr.error('Passwords do not match'); return; }
+      try {
+        const res = await fetch(`/manager/users/<%= user._id %>`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password: newPass }) });
+        if (!res.ok) throw new Error('Update failed');
+        toastr.success('Password changed successfully');
+        document.getElementById('passwordForm').reset();
+      } catch { toastr.error('Failed to change password'); }
+    });
+  </script>
+</body>
+</html>

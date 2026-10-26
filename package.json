@@ -2,7 +2,7 @@
     "name": "Akautomations Api",
     "version": "1.0",
     "description": "WhatsApp REST API for multiple devices based on Baileys",
-    "main": "server.js",
+    "main": "src/server.js",
     "scripts": {
         "start": "node src/server.js",
         "dev": "nodemon",
@@ -55,7 +55,9 @@
         "multer": "^1.4.5-lts.1",
         "node-cache": "^5.1.2",
         "node-cron": "^3.0.3",
+        "node-fetch": "^2.7.0",
         "node-schedule": "^2.1.1",
+        "async": "^3.2.6",
         "pino": "^8.7.0",
         "qrcode": "^1.5.1",
         "rimraf": "^6.0.1",

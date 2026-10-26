@@ -4,214 +4,747 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
-  <!-- DataTables CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-
+  <title>Message Reports & Analytics — AK Automations</title>
+  
+  <!-- Bootstrap 5 & FontAwesome -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  
+  <!-- DataTables Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
+
+  <style>
+    .report-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 4px 20px rgba(169, 134, 29, 0.06);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .report-card:hover {
+      box-shadow: 0 6px 24px rgba(169, 134, 29, 0.1);
+    }
+    .kpi-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+    .badge-gold {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      color: #fff;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      border-radius: 50px;
+    }
+    .btn-gold:hover {
+      filter: brightness(1.05);
+      color: #fff;
+    }
+    .filter-pill {
+      cursor: pointer;
+      border-radius: 50px;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink-soft);
+      transition: all 0.2s;
+    }
+    .filter-pill:hover, .filter-pill.active {
+      background: var(--gold-soft);
+      border-color: var(--gold);
+      color: var(--gold-dark);
+    }
+    .table thead th {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      background-color: #faf7ef;
+      border-bottom: 2px solid var(--line);
+      padding: 12px 14px;
+    }
+    .table tbody td {
+      padding: 12px 14px;
+      vertical-align: middle;
+      font-size: 0.9rem;
+    }
+    .msg-preview-cell {
+      max-width: 280px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
 </head>
 
-<body>
-
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#">
-        <img src="/img/logo.png" alt="Logo" width="30" height="30" class="me-2">
-        AK Automation
+<body class="user-layout">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/manager/dashboard">
+        <span class="d-inline-flex align-items-center justify-content-center" style="width:38px;height:38px;border-radius:10px;background:#fff;color:var(--gold-dark);font-weight:800;">AK</span>
+        <span>AK Automations</span>
       </a>
-      <p class="text-light m-0 ms-3">Hi, <%= user.username %>
-      </p>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="/manager/dashboard">Dashboard</a></li>
-          <li class="nav-item"><a class="nav-link" href="/manager/settings">Settings</a></li>
-          <li class="nav-item"><a class="nav-link" href="/manager/reports">Reports</a></li>
-          <li class="nav-item"><a class="nav-link" href="/manager/helps">Help</a></li>
-          <li class="nav-item"><a class="nav-link text-danger" href="/manager/logout">Logout</a></li>
-        </ul>
+      <div class="d-flex align-items-center gap-3 ms-auto">
+        <span class="text-white-50 small d-none d-md-inline">Welcome, <strong><%= user.username %></strong></span>
+        <a class="btn btn-light btn-sm rounded-pill px-3 d-none d-md-inline-flex" href="/manager/logout"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</a>
+        <button class="navbar-toggler d-lg-none" type="button" id="userSidebarToggle" aria-label="Open navigation menu" aria-controls="userSidebar" aria-expanded="false">
+          <i class="fa-solid fa-bars text-white"></i>
+        </button>
       </div>
     </div>
   </nav>
 
-  <div class="container-fluid">
-    <div class="row">
-      <nav class="col-md-3 col-lg-2 d-md-block sidebar">
-        <div class="position-sticky pt-3">
-          <ul class="nav flex-column">
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/home' ? 'active' : '' %>" href="/manager/dashboard">Dashboard</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/settings' ? 'active' : '' %>" href="/manager/settings">Settings</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/reports' ? 'active' : '' %>" href="/manager/reports">Reports</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/helps' ? 'active' : '' %>" href="/manager/helps">Help</a>
-            </li>
-          </ul>
+  <div class="user-sidebar-overlay" id="userSidebarOverlay"></div>
+  <div class="container-fluid user-app">
+    <div class="row gx-0">
+      
+      <!-- Sidebar Navigation -->
+      <nav class="col-md-3 col-lg-2 sidebar" id="userSidebar" aria-label="Main navigation">
+        <div class="position-sticky pt-4 px-3">
+          <div class="text-center mb-4 pb-3 border-bottom">
+            <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-2" style="width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#fff;font-weight:800;font-size:1.25rem;">AK</div>
+            <h6 class="mb-0 fw-bold text-uppercase small">User Panel</h6>
+          </div>
+          <%- include('partials/sidebar-navigation', { activePage: 'reports' }) %>
         </div>
       </nav>
 
-      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-        <div class="d-flex justify-content-between flex-wrap align-items-center py-3 mb-4 border-bottom">
-          <h1 class="h2">Reports</h1>
-          <button id="deleteAllBtn" class="btn btn-danger" disabled>
-            Delete All
-          </button>
+      <!-- Main Content -->
+      <main class="col-md-9 col-lg-10 px-3 px-md-4 py-4">
+        
+        <!-- Header -->
+        <div class="d-flex justify-content-between flex-wrap align-items-center pb-2 mb-3 border-bottom">
+          <div>
+            <h2 class="fw-bold text-dark mb-0">Message Reports & Analytics</h2>
+            <small class="text-muted">Real-time message delivery logs, failure tracking, and dispatch analytics.</small>
+          </div>
+          <div class="d-flex gap-2 mt-2 mt-md-0">
+            <button id="exportCsvBtn" class="btn btn-outline-success btn-sm rounded-pill px-3 shadow-sm" onclick="exportReportsCsv()" disabled>
+              <i class="fa-solid fa-file-csv me-1"></i> Export CSV
+            </button>
+            <button id="deleteAllBtn" class="btn btn-outline-danger btn-sm rounded-pill px-3 shadow-sm" disabled>
+              <i class="fa-solid fa-trash-can me-1"></i> Delete All
+            </button>
+          </div>
         </div>
-        <div class="main-content">
-          <div class="form-group">
-            <label for="tokenSelect">Select Token ID:</label>
-            <select id="tokenSelect" class="form-control">
-              <option value="">-- Select Token ID --</option>
-            </select>
+
+        <!-- Instance Selection Bar -->
+        <div class="card report-card p-3 mb-4 bg-light border-0">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 500px;">
+              <span class="text-muted fw-bold small text-nowrap"><i class="fa-solid fa-server text-primary me-1"></i> Sending Instance:</span>
+              <select id="tokenSelect" class="form-select form-select-sm rounded-pill shadow-sm">
+                <option value="">-- Instance Select Karein --</option>
+              </select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span id="instanceConnectionBadge" class="badge bg-secondary rounded-pill px-3 py-2">Select an instance</span>
+              <button class="btn btn-sm btn-outline-secondary rounded-circle shadow-sm" title="Refresh Messages" onclick="reloadCurrentTokenMessages()">
+                <i class="fa-solid fa-rotate"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MESSAGE REPORTS DATA DASHBOARD (KPI CARDS) -->
+        <!-- ========================================== -->
+        <div class="row g-3 mb-4" id="reportDashboardRow">
+          <!-- Total Dispatched -->
+          <div class="col-6 col-lg-3">
+            <div class="card report-card p-3 border-0 h-100">
+              <div class="d-flex align-items-center gap-3">
+                <div class="kpi-icon bg-primary bg-opacity-10 text-primary">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </div>
+                <div>
+                  <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Total Dispatched</small>
+                  <h3 class="fw-bold mb-0 text-dark" id="kpiTotalCount">0</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sent Successfully -->
+          <div class="col-6 col-lg-3">
+            <div class="card report-card p-3 border-0 h-100">
+              <div class="d-flex align-items-center gap-3">
+                <div class="kpi-icon bg-success bg-opacity-10 text-success">
+                  <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                  <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Sent Successfully</small>
+                  <h3 class="fw-bold mb-0 text-success" id="kpiSentCount">0</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Failed -->
+          <div class="col-6 col-lg-3">
+            <div class="card report-card p-3 border-0 h-100">
+              <div class="d-flex align-items-center gap-3">
+                <div class="kpi-icon bg-danger bg-opacity-10 text-danger">
+                  <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+                <div>
+                  <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Failed / Error</small>
+                  <h3 class="fw-bold mb-0 text-danger" id="kpiFailedCount">0</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delivery Rate -->
+          <div class="col-6 col-lg-3">
+            <div class="card report-card p-3 border-0 h-100">
+              <div class="d-flex align-items-center gap-3">
+                <div class="kpi-icon bg-warning bg-opacity-10 text-warning">
+                  <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <div>
+                  <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem;">Delivery Rate</small>
+                  <h3 class="fw-bold mb-0 text-dark" id="kpiSuccessRate">0%</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TABLE VIEW & FILTER TABS -->
+        <!-- ========================================== -->
+        <div class="card report-card p-4 border-0">
+          
+          <!-- Filters & Status Tabs -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 pb-3 border-bottom">
+            <div class="d-flex align-items-center gap-2 flex-wrap" id="statusFilterTabs">
+              <span class="filter-pill active" data-filter="all" onclick="filterTableByStatus('all')">
+                <i class="fa-solid fa-list me-1"></i> All Messages (<span id="pillCountAll">0</span>)
+              </span>
+              <span class="filter-pill" data-filter="sent" onclick="filterTableByStatus('sent')">
+                <i class="fa-solid fa-circle-check text-success me-1"></i> Sent (<span id="pillCountSent">0</span>)
+              </span>
+              <span class="filter-pill" data-filter="failed" onclick="filterTableByStatus('failed')">
+                <i class="fa-solid fa-circle-xmark text-danger me-1"></i> Failed (<span id="pillCountFailed">0</span>)
+              </span>
+              <span class="filter-pill" data-filter="pending" onclick="filterTableByStatus('pending')">
+                <i class="fa-solid fa-clock text-warning me-1"></i> Pending (<span id="pillCountPending">0</span>)
+              </span>
+            </div>
+            <div>
+              <span class="text-muted small" id="showingCountBadge">Select an instance to view logs</span>
+            </div>
           </div>
 
           <!-- Message Table -->
           <div class="table-responsive">
-            <table id="messageTable" class="table table-bordered table-striped">
-              <thead class="table-dark">
+            <table id="messageTable" class="table table-hover align-middle w-100">
+              <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Mobile Number</th>
-                  <th>Message</th>
-                  <th>Status</th>
-                  <th>Timestamp</th>
-                  <th>Action</th>
+                  <th style="width: 50px;">#</th>
+                  <th style="width: 170px;">Recipient</th>
+                  <th>Message Preview</th>
+                  <th style="width: 100px;">Type</th>
+                  <th style="width: 160px;">Delivery Status</th>
+                  <th style="width: 170px;">Date & Time</th>
+                  <th style="width: 90px;" class="text-center">Action</th>
                 </tr>
               </thead>
               <tbody id="messageTableBody">
-                <!-- Data will be inserted here dynamically -->
+                <!-- Dynamically populated via DataTables -->
               </tbody>
             </table>
-
           </div>
-          <!-- jQuery & DataTables JS -->
-          <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-          <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-          <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-          <script>
-            let currentMessages = [];
-            let currentToken = '';
 
-            document.addEventListener('DOMContentLoaded', function () {
-              const tokenSelect = document.getElementById('tokenSelect');
-              const messageTableBody = document.getElementById('messageTableBody');
-              const deleteAllBtn = document.getElementById('deleteAllBtn');
+          <!-- Empty State Container -->
+          <div id="tableEmptyState" class="text-center py-5 d-none">
+            <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle text-muted mb-3" style="width: 70px; height: 70px;">
+              <i class="fa-regular fa-envelope-open fs-2"></i>
+            </div>
+            <h5 class="fw-bold text-dark">Koi Message Record Nahi Mila</h5>
+            <p class="text-muted small mb-0">Is instance se abhi tak koi message send nahi kiya gaya hai.</p>
+          </div>
 
-              // Initialize DataTable
-              let dataTable = new DataTable('#messageTable', {
-                pageLength: 10, // Default rows per page
-                lengthMenu: [10, 50, 100, 500, 1000], // Dropdown options
-                ordering: true,
-              });
+        </div>
 
-              // Fetch Token IDs
-              fetch('/manager/users/instancesList')
-                .then(response => response.json())
-                .then(tokens => {
-                  tokens.data.forEach(token => {
-                    const option = document.createElement('option');
-                    option.value = token.instance_key;
-                    option.textContent = token.instance_key;
-                    tokenSelect.appendChild(option);
-                  });
-                })
-                .catch(error => console.error('Error fetching token IDs:', error));
+        <!-- ========================================== -->
+        <!-- MESSAGE DETAILS MODAL -->
+        <!-- ========================================== -->
+        <div class="modal fade" id="messageDetailModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4">
+              <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-circle-info text-primary me-2"></i>Message Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body py-4">
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                  <div>
+                    <small class="text-muted d-block">Recipient:</small>
+                    <span class="fw-bold font-monospace fs-5 text-dark" id="modalRecipient">--</span>
+                  </div>
+                  <div id="modalStatusBadge">--</div>
+                </div>
 
-              // Fetch Messages on Token Selection
-              tokenSelect.addEventListener('change', function () {
-                const selectedToken = tokenSelect.value;
-                currentToken = selectedToken;
-                if (!selectedToken) {
-                  dataTable.clear().draw();
-                  currentMessages = [];
-                  deleteAllBtn.disabled = true;
-                  return;
-                }
+                <div class="mb-3">
+                  <small class="text-muted d-block">Message Content:</small>
+                  <div class="p-3 bg-light rounded-3 font-monospace small" id="modalMessageText" style="white-space: pre-wrap; max-height: 200px; overflow-y: auto;">
+                    --
+                  </div>
+                </div>
 
-                fetch(`/manager/messages/${selectedToken}`)
-                  .then(response => response.json())
-                  .then(messages => {
-                    dataTable.clear(); // Clear existing table data
-                    console.log(messages.data)
-                    // Sort messages by createdAt (latest first)
-                    currentMessages = messages.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                <div id="modalMediaBox" class="mb-3 d-none">
+                  <small class="text-muted d-block">Media Attachment:</small>
+                  <a href="#" target="_blank" id="modalMediaLink" class="btn btn-sm btn-outline-primary rounded-pill mt-1">
+                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Open Media File
+                  </a>
+                </div>
 
-                    // Populate DataTable
-                    currentMessages.forEach((message, index) => {
-                      let messageContent = message.message || "";
-                      if (message.url) messageContent += `<br>${message.url}`; // Append URL as text
+                <div id="modalErrorBox" class="alert alert-danger d-none py-2 px-3 small rounded-3">
+                  <strong><i class="fa-solid fa-triangle-exclamation me-1"></i> Failure Reason:</strong>
+                  <div id="modalErrorReason" class="mt-1">--</div>
+                </div>
 
-                      dataTable.row.add([
-                        index + 1,
-                        message.id,
-                        messageContent,
-                        message.status,
-                        new Date(message.createdAt).toLocaleString(),
-                        `<button class="btn btn-sm btn-danger delete-btn" data-id="${message._id}">Delete</button>`
-                      ]);
-                    });
+                <div class="d-flex justify-content-between text-muted small pt-2 border-top">
+                  <span>Timestamp: <strong id="modalTimestamp">--</strong></span>
+                  <span>Instance: <strong id="modalInstanceKey">--</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <%- include('partials/footer') %>
+      </main>
+    </div>
+  </div>
 
-                    dataTable.draw(); // Refresh DataTable
-                    deleteAllBtn.disabled = currentMessages.length === 0;
-                  })
-                  .catch(error => console.error('Error fetching messages:', error));
-              });
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <script src="/js/user-navigation.js"></script>
 
-              // Delete single message
-              $('#messageTableBody').on('click', '.delete-btn', function() {
-                const messageId = $(this).data('id');
-                if(confirm('Are you sure you want to delete this message?')) {
-                  fetch(`/manager/messages/delete/${currentToken}/${messageId}`, {
-                    method: 'DELETE'
-                  })
-                  .then(response => response.json())
-                  .then(data => {
-                    if(data.error === false) {
-                      alert('Message deleted successfully');
-                      tokenSelect.dispatchEvent(new Event('change'));
-                    } else {
-                      alert('Error deleting message: ' + data.message);
-                    }
-                  })
-                  .catch(error => console.error('Error deleting message:', error));
-                }
-              });
+  <script>
+    if (window.toastr) {
+      toastr.options = { positionClass: "toast-bottom-right", timeOut: 3000 };
+    }
 
-              // Delete all messages
-              deleteAllBtn.addEventListener('click', function() {
-                if(currentMessages.length === 0) {
-                  alert('No messages to delete');
-                  return;
-                }
-                if(confirm(`Are you sure you want to delete all ${currentMessages.length} messages?`)) {
-                  fetch(`/manager/messages/deleteAll/${currentToken}`, {
-                    method: 'DELETE'
-                  })
-                  .then(response => response.json())
-                  .then(data => {
-                    if(data.error === false) {
-                      alert('All messages deleted successfully');
-                      tokenSelect.dispatchEvent(new Event('change'));
-                    } else {
-                      alert('Error deleting messages: ' + data.message);
-                    }
-                  })
-                  .catch(error => console.error('Error deleting messages:', error));
-                }
-              });
+    let currentMessages = [];
+    let currentToken = '';
+    let dataTable = null;
+    let instancesMap = {};
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const tokenSelect = document.getElementById('tokenSelect');
+      const deleteAllBtn = document.getElementById('deleteAllBtn');
+      const exportCsvBtn = document.getElementById('exportCsvBtn');
+
+      // Initialize DataTable with clean Bootstrap 5 styling
+      dataTable = $('#messageTable').DataTable({
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100, 500],
+        ordering: true,
+        order: [[5, 'desc']], // Order by Date & Time descending
+        language: {
+          search: "_INPUT_",
+          searchPlaceholder: "Search recipient or message...",
+          lengthMenu: "Show _MENU_ records",
+          info: "Showing _START_ to _END_ of _TOTAL_ messages",
+          emptyTable: "Koi message data uplabdh nahi hai."
+        }
+      });
+
+      // Fetch Token IDs on Page Load
+      fetch('/manager/users/instancesList')
+        .then(res => res.json())
+        .then(resData => {
+          const list = resData.data || [];
+          tokenSelect.innerHTML = '<option value="">-- Instance Select Karein --</option>';
+
+          list.forEach(item => {
+            instancesMap[item.instance_key] = item;
+            const opt = document.createElement('option');
+            opt.value = item.instance_key;
+            opt.textContent = `${item.instance_key} ${item.phone_connected ? '🟢 (Online)' : '🔴 (Offline)'}`;
+            tokenSelect.appendChild(opt);
+          });
+
+          // Auto-select first token if available
+          if (list.length > 0) {
+            tokenSelect.value = list[0].instance_key;
+            tokenSelect.dispatchEvent(new Event('change'));
+          } else {
+            document.getElementById('instanceConnectionBadge').innerText = 'No instances created';
+            document.getElementById('tableEmptyState').classList.remove('d-none');
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching token IDs:', err);
+          toastr.error('Failed to load instance list');
+        });
+
+      // Handle Token Selection Change
+      tokenSelect.addEventListener('change', function () {
+        const selected = tokenSelect.value;
+        currentToken = selected;
+
+        if (!selected) {
+          dataTable.clear().draw();
+          currentMessages = [];
+          deleteAllBtn.disabled = true;
+          exportCsvBtn.disabled = true;
+          updateDashboardKpi([]);
+          document.getElementById('instanceConnectionBadge').className = 'badge bg-secondary rounded-pill px-3 py-2';
+          document.getElementById('instanceConnectionBadge').innerText = 'Select an instance';
+          return;
+        }
+
+        const instInfo = instancesMap[selected];
+        const badgeEl = document.getElementById('instanceConnectionBadge');
+        if (instInfo && instInfo.phone_connected) {
+          badgeEl.className = 'badge bg-success rounded-pill px-3 py-2';
+          badgeEl.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> Device Online';
+        } else {
+          badgeEl.className = 'badge bg-danger rounded-pill px-3 py-2';
+          badgeEl.innerHTML = '<i class="fa-solid fa-circle-xmark me-1"></i> Device Offline';
+        }
+
+        loadMessagesForToken(selected);
+      });
+
+      // Delete Single Message
+      $('#messageTableBody').on('click', '.delete-btn', function () {
+        const messageId = $(this).data('id');
+        if (confirm('Kya aap is message record ko delete karna chahte hain?')) {
+          fetch(`/manager/messages/delete/${currentToken}/${messageId}`, {
+            method: 'DELETE'
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.error === false) {
+                toastr.success('Message deleted successfully');
+                loadMessagesForToken(currentToken);
+              } else {
+                toastr.error('Error: ' + data.message);
+              }
+            })
+            .catch(err => toastr.error('Network error: ' + err.message));
+        }
+      });
+
+      // Delete All Messages for Token
+      deleteAllBtn.addEventListener('click', function () {
+        if (!currentToken || currentMessages.length === 0) return;
+        if (confirm(`Kya aap sure hain ki is instance ke saare ${currentMessages.length} messages delete karna chahte hain?`)) {
+          fetch(`/manager/messages/deleteAll/${currentToken}`, {
+            method: 'DELETE'
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.error === false) {
+                toastr.success('Saare messages delete ho gaye');
+                loadMessagesForToken(currentToken);
+              } else {
+                toastr.error('Error: ' + data.message);
+              }
+            })
+            .catch(err => toastr.error('Network error: ' + err.message));
+        }
+      });
+    });
+
+    // Load Messages for a specific token
+    function loadMessagesForToken(token) {
+      if (!token) return;
+      toastr.info('Messages load ho rahe hain...');
+
+      fetch(`/manager/messages/${token}`)
+        .then(res => res.json())
+        .then(result => {
+          dataTable.clear();
+          const rawList = result.data || [];
+          currentMessages = rawList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+          updateDashboardKpi(currentMessages);
+
+          const deleteAllBtn = document.getElementById('deleteAllBtn');
+          const exportCsvBtn = document.getElementById('exportCsvBtn');
+          const emptyState = document.getElementById('tableEmptyState');
+
+          if (currentMessages.length === 0) {
+            emptyState.classList.remove('d-none');
+            deleteAllBtn.disabled = true;
+            exportCsvBtn.disabled = true;
+            dataTable.draw();
+            return;
+          }
+
+          emptyState.classList.add('d-none');
+          deleteAllBtn.disabled = false;
+          exportCsvBtn.disabled = false;
+
+          // Render rows in DataTable
+          currentMessages.forEach((msg, idx) => {
+            const rawStatus = (msg.status || 'pending').toLowerCase();
+            const failureReason = msg.failureReason || '';
+
+            // Clean formatted recipient
+            const cleanId = String(msg.id || '').replace(/[^0-9]/g, '');
+            const recipientHtml = `
+              <div class="d-flex align-items-center gap-1">
+                <i class="fa-brands fa-whatsapp text-success fs-5"></i>
+                <span class="fw-bold font-monospace text-dark">${cleanId ? '+' + cleanId : 'Unknown'}</span>
+              </div>
+            `;
+
+               // Clean Message preview with media icon and caption
+            let messageText = msg.message || '';
+            const caption = msg.options?.caption || '';
+            let mediaBadge = '';
+
+            if (msg.url) {
+              mediaBadge = `<a href="${escapeHtml(msg.url)}" target="_blank" rel="noopener noreferrer" class="badge bg-light text-primary border text-decoration-none ms-1"><i class="fa-solid fa-link me-1"></i>Media</a>`;
+            } else if (msg.base64 || msg.file) {
+              mediaBadge = `<span class="badge bg-light text-secondary border ms-1"><i class="fa-solid fa-paperclip me-1"></i>File</span>`;
+            }
+
+            // Message empty ho to caption show karo
+            const previewText = messageText.trim() || caption.trim();
+
+            const snippet = previewText.length > 50
+              ? previewText.substring(0, 50) + '...'
+              : previewText;
+
+            const messageHtml = `
+              <div class="msg-preview-cell" title="${escapeHtml(previewText)}">
+                <span>${escapeHtml(snippet || '(Media message)')}</span>
+                ${mediaBadge}
+              </div>
+            `
+
+
+
+            // Message Type Badge
+            const typeLabel = msg.type || (msg.url ? 'media' : 'text');
+            const typeHtml = `<span class="badge bg-light text-uppercase border text-secondary" style="font-size:0.75rem;">${typeLabel}</span>`;
+
+            // Status Badge with reason preview
+            let statusBadge = '';
+            if (rawStatus === 'sent' || rawStatus === 'success') {
+              statusBadge = `<span class="badge bg-success-subtle text-success border border-success px-2 py-1"><i class="fa-solid fa-circle-check me-1"></i> Sent</span>`;
+            } else if (rawStatus === 'failed' || rawStatus === 'error') {
+              statusBadge = `
+                <div>
+                  <span class="badge bg-danger-subtle text-danger border border-danger px-2 py-1"><i class="fa-solid fa-circle-xmark me-1"></i> Failed</span>
+                  ${failureReason ? `<div class="small text-danger text-truncate mt-1" style="max-width: 140px;" title="${escapeHtml(failureReason)}"><i class="fa-solid fa-triangle-exclamation me-1"></i>${escapeHtml(failureReason)}</div>` : ''}
+                </div>
+              `;
+            } else {
+              statusBadge = `<span class="badge bg-warning-subtle text-warning border border-warning px-2 py-1"><i class="fa-solid fa-clock me-1"></i> Queued</span>`;
+            }
+
+            // Timestamp Formatted
+            const dateObj = new Date(msg.createdAt);
+            const dateStr = isNaN(dateObj.getTime()) ? '--' : dateObj.toLocaleString('en-IN', {
+              day: '2-digit', month: 'short', year: 'numeric',
+              hour: '2-digit', minute: '2-digit', hour12: true
             });
+            const dateHtml = `<small class="text-muted"><i class="fa-regular fa-clock me-1"></i>${dateStr}</small>`;
 
-          </script>
+            // Actions (View Details & Delete)
+            const actionHtml = `
+              <div class="d-flex justify-content-center gap-1">
+                <button class="btn btn-sm btn-outline-primary rounded-circle" style="width:32px;height:32px;padding:0;" title="View Details" onclick="openMessageDetailModal(${idx})">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-btn rounded-circle" style="width:32px;height:32px;padding:0;" title="Delete" data-id="${msg._id}">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            `;
 
+            dataTable.row.add([
+              idx + 1,
+              recipientHtml,
+              messageHtml,
+              typeHtml,
+              statusBadge,
+              dateHtml,
+              actionHtml
+            ]);
+          });
 
+          dataTable.draw();
+          toastr.success(`${currentMessages.length} Messages loaded!`);
+        })
+        .catch(err => {
+          console.error('Error fetching messages:', err);
+          toastr.error('Messages load karne me error: ' + err.message);
+        });
+    }
+
+    function reloadCurrentTokenMessages() {
+      if (!currentToken) return toastr.warning('Pehle instance select karein!');
+      loadMessagesForToken(currentToken);
+    }
+
+    // Update KPI Stat Cards & Pill Badges
+    function updateDashboardKpi(messages) {
+      const total = messages.length;
+      let sent = 0;
+      let failed = 0;
+      let pending = 0;
+
+      messages.forEach(m => {
+        const s = (m.status || '').toLowerCase();
+        if (s === 'sent' || s === 'success') sent++;
+        else if (s === 'failed' || s === 'error') failed++;
+        else pending++;
+      });
+
+      const rate = total > 0 ? Math.round((sent / total) * 100) : 0;
+
+      document.getElementById('kpiTotalCount').innerText = total;
+      document.getElementById('kpiSentCount').innerText = sent;
+      document.getElementById('kpiFailedCount').innerText = failed;
+      document.getElementById('kpiSuccessRate').innerText = rate + '%';
+
+      document.getElementById('pillCountAll').innerText = total;
+      document.getElementById('pillCountSent').innerText = sent;
+      document.getElementById('pillCountFailed').innerText = failed;
+      document.getElementById('pillCountPending').innerText = pending;
+
+      document.getElementById('showingCountBadge').innerText = `Total ${total} messages recorded`;
+    }
+
+    // Filter table rows by status tab
+    function filterTableByStatus(statusKey) {
+      document.querySelectorAll('#statusFilterTabs .filter-pill').forEach(el => el.classList.remove('active'));
+      const activePill = document.querySelector(`#statusFilterTabs [data-filter="${statusKey}"]`);
+      if (activePill) activePill.classList.add('active');
+
+      if (!dataTable) return;
+
+      if (statusKey === 'all') {
+        dataTable.column(4).search('').draw();
+      } else if (statusKey === 'sent') {
+        dataTable.column(4).search('Sent').draw();
+      } else if (statusKey === 'failed') {
+        dataTable.column(4).search('Failed').draw();
+      } else if (statusKey === 'pending') {
+        dataTable.column(4).search('Queued').draw();
+      }
+    }
+
+    // Open Message Details Modal
+    function openMessageDetailModal(index) {
+      const msg = currentMessages[index];
+      if (!msg) return;
+
+      document.getElementById('modalRecipient').innerText = msg.id || 'Unknown';
+      document.getElementById('modalMessageText').innerText = msg.message || msg.options?.caption || '(No text body)';
+      document.getElementById('modalInstanceKey').innerText = currentToken || '--';
+
+      const dateObj = new Date(msg.createdAt);
+      document.getElementById('modalTimestamp').innerText = isNaN(dateObj.getTime()) ? '--' : dateObj.toLocaleString('en-IN');
+
+      // Status badge in modal
+      const rawStatus = (msg.status || 'pending').toLowerCase();
+      const statusBox = document.getElementById('modalStatusBadge');
+      const errBox = document.getElementById('modalErrorBox');
+
+      if (rawStatus === 'sent' || rawStatus === 'success') {
+        statusBox.innerHTML = '<span class="badge bg-success px-3 py-2 rounded-pill"><i class="fa-solid fa-check me-1"></i> Sent</span>';
+        errBox.classList.add('d-none');
+      } else if (rawStatus === 'failed' || rawStatus === 'error') {
+        statusBox.innerHTML = '<span class="badge bg-danger px-3 py-2 rounded-pill"><i class="fa-solid fa-xmark me-1"></i> Failed</span>';
+        errBox.classList.remove('d-none');
+        document.getElementById('modalErrorReason').innerText = msg.failureReason || 'Unknown error occurred during dispatch.';
+      } else {
+        statusBox.innerHTML = '<span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="fa-solid fa-clock me-1"></i> Queued</span>';
+        errBox.classList.add('d-none');
+      }
+
+      // Media URL
+      const mediaBox = document.getElementById('modalMediaBox');
+      const mediaLink = document.getElementById('modalMediaLink');
+      if (msg.url) {
+        mediaBox.classList.remove('d-none');
+        mediaLink.href = msg.url;
+      } else {
+        mediaBox.classList.add('d-none');
+      }
+
+      new bootstrap.Modal(document.getElementById('messageDetailModal')).show();
+    }
+
+    // Export Reports to CSV
+    function exportReportsCsv() {
+      if (!currentMessages || currentMessages.length === 0) {
+        return toastr.warning('Export karne ke liye koi message nahi mila!');
+      }
+
+      const headers = ["Index", "Recipient", "Type", "Status", "Failure Reason", "Message", "Media URL", "Created At"];
+      const rows = currentMessages.map((m, idx) => [
+        idx + 1,
+        m.id || "",
+        m.type || "text",
+        m.status || "",
+        (m.failureReason || "").replace(/(\r\n|\n|\r)/gm, " "),
+        (m.message || m.options.caption || "").replace(/(\r\n|\n|\r)/gm, " "),
+        m.url || "",
+        m.createdAt ? new Date(m.createdAt).toISOString() : ""
+      ]);
+
+      let csvContent = "\uFEFF"; // UTF-8 BOM for Excel
+      csvContent += headers.map(h => `"${h}"`).join(",") + "\r\n";
+
+      rows.forEach(row => {
+        csvContent += row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(",") + "\r\n";
+      });
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const cleanToken = (currentToken || "Instance").replace(/[^a-zA-Z0-9]/g, "_");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Message_Report_${cleanToken}_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toastr.success('CSV Report download ho gayi!');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
 </body>
-
 </html>

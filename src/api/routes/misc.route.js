@@ -6,7 +6,7 @@ const { protectRoutes } = require('../../config/config');
 const tokenCheck = require('../middlewares/tokenCheck');
 const router = express.Router()
 if (protectRoutes) {
-  router.use(tokenCheck);
+    router.use(tokenCheck);
 }
 
 router.route('/onwhatsapp').post(keyVerify, loginVerify, controller.onWhatsapp)
@@ -16,10 +16,6 @@ router.route('/blockUser').post(keyVerify, loginVerify, controller.blockUser)
 router.route('/contacts').get(keyVerify, loginVerify, controller.contacts)
 router.route('/chats').post(keyVerify, loginVerify, controller.chats)
 router.route('/mystatus').post(keyVerify, loginVerify, controller.mystatus)
-router
-    .route('/updateProfilePicture')
-    .post(keyVerify, loginVerify, controller.updateProfilePicture)
-router
-    .route('/getuserorgroupbyid')
-    .get(keyVerify, loginVerify, controller.getUserOrGroupById)
+router.route('/updateProfilePicture').post(keyVerify, loginVerify, controller.updateProfilePicture)
+router.route('/getuserorgroupbyid').get(keyVerify, loginVerify, controller.getUserOrGroupById)
 module.exports = router

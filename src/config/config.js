@@ -67,11 +67,6 @@ module.exports = {
 	mongoose: {
 		enabled: MONGODB_ENABLED,
 		url: MONGODB_URL,
-		options: {
-			// useCreateIndex: true,
-			useNewUrlParser: true,
-			useUnifiedTopology: true,
-		},
 	},
 	browser: {
 		platform: CLIENT_PLATFORM,

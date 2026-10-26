@@ -2,412 +2,1317 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Automation</title>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-    <!-- Bootstrap 5 CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <title>AKAUTOMATIONS | WhatsApp API Gateway for Business</title>
 
-    <!-- FontAwesome for Icons -->
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-
-    <style>
-        /* Default Dark Mode */
-        body {
-            background-color: #0b0c10;
-            color: #66fcf1;
-            font-family: sans-serif;
-        }
-
-        h1 {
-            font-size: 3rem;
-            font-weight: bold;
-            text-shadow: 0 0 10px #66fcf1, 0 0 20px #45a29e;
-        }
-
-        .btn-custom {
-            background-color: #45a29e;
-            border: none;
-            color: #0b0c10;
-            font-weight: bold;
-            text-transform: uppercase;
-            box-shadow: 0 0 10px #66fcf1;
-            transition: all 0.3s ease;
-        }
-
-        .btn-custom:hover {
-            background-color: #66fcf1;
-            color: #0b0c10;
-            box-shadow: 0 0 20px #66fcf1;
-        }
-
-        .header,
-        .footer {
-            background-color: #1f2833;
-            padding: 10px 0;
-            text-align: center;
-        }
-
-        .header a,
-        .footer a {
-            color: #66fcf1;
-            text-decoration: none;
-            margin: 0 10px;
-            transition: color 0.3s ease;
-        }
-
-        .header a:hover,
-        .footer a:hover {
-            color: #45a29e;
-        }
-
-        /* Card Box */
-        .card-box {
-            background: #fff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
-            width: 350px;
-            transition: transform 0.3s ease;
-            text-align: center;
-            margin: 20px auto;
-            color: #000;
-        }
-
-        .card-box:hover {
-            transform: scale(1.05);
-        }
-
-        /* Feature Section */
-        .feature-box {
-            max-width: 900px;
-            margin: 30px auto;
-            background: #fff;
-            padding: 25px;
-            width: 95%;
-            border-radius: 12px;
-            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            color: #000;
-        }
-
-        /* Light Mode */
-        .light-mode {
-            background-color: #ffffff !important;
-            color: #222 !important;
-        }
-
-        .light-mode .header,
-        .light-mode .footer {
-            background-color: #f8f9fa !important;
-            color: #222 !important;
-        }
-
-        .light-mode .header a,
-        .light-mode .footer a {
-            color: #222 !important;
-        }
-
-        .light-mode .card-box,
-        .light-mode .feature-box {
-            background: #f8f9fa;
-            color: #000;
-        }
-
-        .light-mode .header a,
-        .light-mode .footer a {
-            color: #222 !important;
-        }
-        .light-mode .faq-section,
-        .light-mode .card-box,
-        .light-mode .feature-box {
-            background: #f8f9fa !important;
-            color: #000 !important;
-        }
-
-        .toggle-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            cursor: pointer;
-        }
-
-        /* WhatsApp Floating Button */
-        .whatsapp-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #25d366;
-            /* WhatsApp Green */
-            color: white;
-            border-radius: 50px;
-            padding: 10px 15px;
-            display: flex;
-            align-items: center;
-            font-weight: bold;
-            text-decoration: none;
-            transition: background 0.3s ease;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .whatsapp-btn:hover {
-            background-color: #1ebe57;
-            text-decoration: none;
-        }
-
-        .whatsapp-btn i {
-            margin-right: 8px;
-        }
+  <meta name="description"
+    content="Connect your business tools to WhatsApp with the AKAUTOMATIONS API gateway. Send text and media, manage linked devices, and schedule customer updates.">
 
 
 
-        /* Footer Styling */
-        .footer {
-            background-color: #0b0c10;
-            /* Dark Background */
-            color: #ffffff;
-            /* White Text */
-            padding: 10px 0;
-            font-size: 14px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 15px 30px;
-        }
+  <!-- Favicons -->
+  <link href="/assets/img/logo.png" rel="icon">
+  <link href="/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
 
-        .footer a {
-            color: #66fcf1;
-            text-decoration: none;
-            font-weight: bold;
-        }
+  <!-- Google Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
+    rel="stylesheet">
 
-        .footer a:hover {
-            color: #45a29e;
-            text-decoration: underline;
-        }
+  <!-- Vendor CSS Files -->
+  <link href="/assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="/assets/vendor/remixicon/remixicon.css" rel="stylesheet">
+  <link href="/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
 
-        .faq-section {
-            max-width: 800px;
-            margin: auto;
-            padding: 50px 0;
-        }
+  <!-- Template Main CSS File -->
+  <link href="/assets/css/style.css" rel="stylesheet">
 
-        .accordion-button {
-            font-weight: bold;
-        }
+  <!-- Light Golden Theme Override -->
+  <style>
+    :root {
+      --gold: #c9a227;
+      --gold-dark: #a9861d;
+      --gold-darker: #8a6d15;
+      --gold-light: #e6c65c;
+      --gold-soft: #f7edd0;
+      --gold-bg: #fdfaf1;
+      --ink: #3a3222;
+      --ink-soft: #6b6353;
+      --line: #ecdfb8;
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .footer {
-                flex-direction: column;
-                text-align: center;
-            }
-        }
-    </style>
+      --neon-blue: var(--gold-dark);
+      --neon-cyan: var(--gold-light);
+      --purple-neon: var(--gold);
+      --magenta-neon: var(--gold-dark);
+      --pink-neon: var(--gold-light);
+      --dark-navy: var(--gold-bg);
+      --black: #ffffff;
+      --white: var(--ink);
+      --light-teal: var(--gold-light);
+      --electric-blue: var(--gold-dark);
+      --primary-color: var(--gold-dark);
+      --secondary-color: var(--gold);
+      --accent-color: var(--gold-darker);
+      --background-dark: var(--gold-bg);
+      --text-light: var(--ink);
+      --text-dark: var(--gold-darker);
+    }
+
+    body {
+      background-color: var(--gold-bg);
+      color: var(--ink);
+    }
+
+    a {
+      color: var(--gold-dark);
+    }
+
+    a:hover {
+      color: var(--gold);
+    }
+
+    /* Header / Navbar */
+    #header.header-scrolled {
+      background: #fff;
+      box-shadow: 0 2px 20px rgba(169, 134, 29, 0.14);
+    }
+
+    .navbar a,
+    .navbar a:focus {
+      color: var(--ink);
+    }
+
+    .navbar a:hover,
+    .navbar .active,
+    .navbar li:hover > a {
+      color: var(--gold-dark);
+    }
+
+    .navbar .getstarted,
+    .navbar .getstarted:focus {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      border-radius: 50px;
+      box-shadow: 0 6px 16px rgba(169, 134, 29, 0.3);
+    }
+
+    .navbar .getstarted:hover {
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    }
+
+    .mobile-nav-toggle {
+      color: var(--ink);
+    }
+
+    .navbar-mobile ul {
+      background-color: #fff;
+    }
+
+    .navbar-mobile a,
+    .navbar-mobile a:focus {
+      color: var(--ink);
+    }
+
+    /* Section headers */
+    .section-header h2 {
+      color: var(--gold);
+    }
+
+    .section-header p {
+      color: var(--ink);
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(160deg, #fbf3dd 0%, var(--gold-bg) 55%, #f9efd2 100%);
+      background-size: cover;
+    }
+
+    .hero h1 {
+      color: var(--ink);
+    }
+
+    .hero h2 {
+      color: var(--ink-soft);
+    }
+
+    .hero .btn-get-started {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      color: #fff;
+      border-radius: 50px;
+      box-shadow: 0 8px 24px rgba(169, 134, 29, 0.35);
+    }
+
+    .hero .btn-get-started:hover {
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    }
+
+    /* About */
+    .about .content {
+      background-color: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .about h3 {
+      color: var(--gold-dark);
+    }
+
+    .about h2 {
+      color: var(--ink);
+    }
+
+    .about p {
+      color: var(--ink-soft);
+    }
+
+    .about .btn-read-more {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      color: #fff;
+      border-radius: 50px;
+      box-shadow: 0 8px 24px rgba(169, 134, 29, 0.3);
+    }
+
+    .about .btn-read-more:hover {
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    }
+
+    /* Values */
+    .values .box {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(169, 134, 29, 0.1);
+    }
+
+    .values .box h3 {
+      color: var(--ink);
+    }
+
+    /* Counts */
+    .counts .count-box {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .counts .count-box i {
+      color: var(--gold-dark);
+    }
+
+    .counts .count-box span {
+      color: var(--ink);
+    }
+
+    .counts .count-box p {
+      color: var(--ink-soft);
+    }
+
+    /* Features */
+    .features .feature-box {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .features .feature-box h3 {
+      color: var(--ink);
+    }
+
+    .features .feature-box i {
+      background: var(--gold-soft);
+      color: var(--gold-dark);
+    }
+
+    .features .feature-box:hover i {
+      background: var(--gold);
+    }
+
+    .features .feture-tabs h3 {
+      color: var(--ink);
+    }
+
+    .features .feture-tabs .nav-link {
+      color: var(--ink-soft);
+    }
+
+    .features .feture-tabs .nav-link.active {
+      color: var(--gold-dark);
+      border-bottom-color: var(--gold);
+    }
+
+    .features .feture-tabs .tab-content h4 {
+      color: var(--ink);
+    }
+
+    .features .feture-tabs .tab-content i {
+      color: var(--gold-dark);
+    }
+
+    .features .feature-icons h3 {
+      color: var(--ink);
+    }
+
+    .features .feature-icons .content .icon-box h4 {
+      color: var(--ink);
+    }
+
+    .features .feature-icons .content .icon-box i {
+      color: var(--gold-dark);
+    }
+
+    .features .feature-icons .content .icon-box p {
+      color: var(--ink-soft);
+    }
+
+    /* Pricing */
+    .pricing .box {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+    }
+
+    .pricing .box:hover {
+      box-shadow: 0 20px 50px rgba(169, 134, 29, 0.18);
+      border-color: var(--gold-light);
+    }
+
+    .pricing h3 {
+      color: var(--ink);
+    }
+
+    .pricing .price {
+      color: var(--ink);
+    }
+
+    .pricing .price span {
+      color: var(--ink-soft);
+    }
+
+    .pricing ul {
+      color: var(--ink-soft);
+    }
+
+    .pricing .btn-buy {
+      color: var(--gold-dark);
+      border-color: var(--gold-dark);
+      border-radius: 50px;
+      font-weight: 600;
+    }
+
+    .pricing .btn-buy:hover {
+      background: var(--gold);
+    }
+
+    .pricing .featured {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    }
+
+    /* FAQ */
+    .faq .accordion-button {
+      color: var(--ink);
+      background: #fff;
+    }
+
+    .faq .accordion-item {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .faq .accordion-button:not(.collapsed) {
+      color: var(--gold-dark);
+    }
+
+    /* Contact */
+    .contact .info-box {
+      color: var(--ink-soft);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .contact .info-box h3 {
+      color: var(--ink);
+    }
+
+    .contact .php-email-form {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .contact .php-email-form input,
+    .contact .php-email-form textarea {
+      border-radius: 8px;
+      border-color: var(--line);
+    }
+
+    .contact .php-email-form input:focus,
+    .contact .php-email-form textarea:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 0.2rem rgba(201, 162, 39, 0.2);
+    }
+
+    .contact .php-email-form button[type=submit] {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      border: none;
+      border-radius: 50px;
+      padding: 12px 34px;
+      font-weight: 600;
+      box-shadow: 0 6px 18px rgba(169, 134, 29, 0.3);
+    }
+
+    .contact .php-email-form button[type=submit]:hover {
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    }
+
+    /* Footer */
+    .footer {
+      background: #fff;
+    }
+
+    .footer .footer-top {
+      background: #fff;
+      border-color: var(--line);
+    }
+
+    .footer .footer-top .footer-info .logo span {
+      color: var(--ink);
+    }
+
+    .footer .footer-top .footer-info p {
+      color: var(--ink-soft);
+    }
+
+    .footer .footer-top .social-links a {
+      color: var(--gold-dark);
+    }
+
+    .footer .footer-top h4 {
+      color: var(--ink);
+    }
+
+    .footer .footer-top .footer-links ul a {
+      color: var(--ink-soft);
+    }
+
+    .footer .footer-top .footer-links ul a:hover {
+      color: var(--gold-dark);
+    }
+
+    .footer .copyright,
+    .footer .credits {
+      color: var(--ink-soft);
+    }
+
+    /* Back to top */
+    .back-to-top {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    }
+
+    .promotions .promo-card {
+      height: 100%;
+      padding: 28px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(169, 134, 29, 0.08);
+    }
+
+    .promotions .promo-card h3 {
+      color: var(--ink);
+      font-size: 20px;
+    }
+
+    .promotions .promo-copy {
+      min-height: 150px;
+      color: var(--ink-soft);
+      line-height: 1.7;
+      white-space: pre-line;
+    }
+
+    .promotions .copy-promo {
+      padding: 9px 18px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      border: 0;
+      border-radius: 50px;
+      font-weight: 600;
+    }
+
+    .promotions .copy-status {
+      display: block;
+      min-height: 24px;
+      margin-top: 10px;
+      color: var(--gold-darker);
+      font-size: 14px;
+    }
+
+    .business-note {
+      padding: 16px 20px;
+      color: var(--ink-soft);
+      background: var(--gold-soft);
+      border-left: 4px solid var(--gold);
+      border-radius: 8px;
+    }
+  </style>
+
 </head>
 
 <body>
 
-    <!-- Dark/Light Mode Toggle -->
-    <button class="btn btn-outline-light toggle-btn" onclick="toggleTheme()">🌙</button>
+  <!-- ======= Header ======= -->
+  <header id="header" class="header fixed-top">
+    <div class="container-fluid container-xl d-flex align-items-center justify-content-between">
 
-    <!-- Header Section -->
-    <div class="header text-center py-3">
-        <a class="btn btn-outline-light mx-2" href="/">Home</a>
-        <a class="btn btn-outline-light mx-2" href="/manager/login">Login</a>
-        <a class="btn btn-outline-light mx-2" href="/manager/register">Register</a>
+      <a href="/#" class="logo d-flex align-items-center">
+        <img src="/assets/img/logo.png" alt="">
+        <span>AKAUTOMATIONS</span>
+      </a>
+
+      <nav id="navbar" class="navbar">
+        <ul>
+          <li><a class="nav-link scrollto active" href="#hero">Home</a></li>
+          <li><a class="nav-link scrollto" href="#features">Features</a></li>
+          <li><a class="nav-link scrollto" href="#use-cases">Use cases</a></li>
+          <li><a class="nav-link scrollto" href="#promotions">Promo messages</a></li>
+          <li><a class="nav-link scrollto" href="#pricing">Pricing</a></li>
+          <li><a class="nav-link scrollto" href="#faq">FAQ</a></li>
+          <li><a class="nav-link scrollto" href="#contact">Contact</a></li>
+          <li><a class="nav-link scrollto" href="/manager/register">Register</a></li>
+          <li><a class="getstarted scrollto" href="/manager/login">Login</a></li>
+        </ul>
+        <i class="bi bi-list mobile-nav-toggle"></i>
+      </nav><!-- .navbar -->
+
     </div>
+  </header><!-- End Header -->
 
-    <!-- Welcome Page Content -->
-    <div class="container text-center py-5">
-        <h1>Welcome to WhatsApp Automation</h1>
-        <p>The Cheapest WhatsApp Gateway Service in India. WhatsApp Gateway is a system used to connect the WhatsApp
-            application with one or more applications via API.</p>
-        <button id="getStartedBtn" class="btn btn-custom mt-3 px-4 py-2">
-            <a href="/manager/login" class="text-light text-decoration-none">Get Started</a>
-        </button>
-    </div>
+  <!-- ======= Hero Section ======= -->
+  <section id="hero" class="hero d-flex align-items-center">
 
-    <!-- Pricing Plan -->
-    <div class="card text-center shadow-lg p-4 card-box bg-dark">
-        <div class="card-body">
-            <h5 class="card-title fw-bold text-uppercase text-danger">🔥 WhatsApp Profiles</h5>
-            <h2 class="fw-bold mt-3">₹ 666</h2>
-            <p class="fw-bold mb-3">per month</p>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6 d-flex flex-column justify-content-center">
+          <h1 data-aos="fade-up">Bring your business conversations into your workflow</h1>
+          <h2 data-aos="fade-up" data-aos-delay="400">Connect your app or CRM to a WhatsApp Web-connected API gateway.
+            Send text and media updates, manage linked devices, and schedule messages from one business dashboard.</h2>
+          <div data-aos="fade-up" data-aos-delay="600">
+            <div class="text-center text-lg-start">
+              <a href="/manager/register"
+                class="btn-get-started scrollto d-inline-flex align-items-center justify-content-center align-self-center">
+                <span>Create an account</span>
+                <i class="bi bi-arrow-right-circle"></i>
+              </a>
 
-            <hr>
+              <a href="https://wa.me/918299854822?text=Hello%2C%20I%27d%20like%20to%20know%20how%20the%20WhatsApp%20API%20gateway%20can%20help%20my%20business."
+                target="_blank" rel="noopener noreferrer"
+                class="btn-get-started scrollto d-inline-flex align-items-center justify-content-center align-self-center">
+                <span>Talk to our team</span>
+                <i class="bi bi-whatsapp"></i>
+              </a>
 
-            <div class="feature text-success">
-                <i class="fas fa-check-circle"></i> WhatsApp SMS – Unlimited SMS Per Month
-            </div>
-            <div class="feature text-success">
-                <i class="fas fa-check-circle"></i> WhatsApp Profile – 2
-            </div>
-            <div class="feature text-success">
-                <i class="fas fa-times-circle"></i> WhatsApp Business API
-            </div>
-            <div class="feature text-success">
-                <i class="fas fa-check-circle"></i> Bulk WhatsApp Messaging
-            </div>
-            <div class="feature text-success">
-                <i class="fas fa-check-circle"></i> Media Messaging – Text/IMG/Video
             </div>
 
-            <hr>
-
-            <!--<a href="#" class="btn btn-danger btn-lg w-100">Get Started</a>-->
+          </div>
         </div>
-    </div>
-
-    <!-- Features Section in Card -->
-    <div class="card text-center shadow-lg p-4 feature-box bg-dark">
-        <div class="card-body">
-            <h5 class="card-title fw-bold text-uppercase text-primary">🚀 Features Available</h5>
-            <hr>
-            <div class="row">
-                <div class="col-md-4">
-                    <h4>API Access</h4>
-                    <p>Ak Automation API is Very Easy to use for everyone</p>
-                </div>
-                <div class="col-md-4">
-                    <h4>Fast & Safe</h4>
-                    <p>The speed of sending WhatsApp messages in seconds and client security is highly maintained</p>
-                </div>
-                <div class="col-md-4">
-                    <h4>Multi Device</h4>
-                    <p>One account can manage more than one device.</p>
-                </div>
-                <div class="col-md-4">
-                    <h4>UI/UX Design</h4>
-                    <p>User-friendly display makes it easier to use the application</p>
-                </div>
-                <div class="col-md-4">
-                    <h4>Auto Reply</h4>
-                    <p>Reply to messages automatically according to what we determine</p>
-                </div>
-                <div class="col-md-4">
-                    <h4>Webhook Integration</h4>
-                    <p>With Webhook we can manage incoming messages on our WhatsApp number</p>
-                </div>
-            </div>
+        <div class="col-lg-6 hero-img" data-aos="zoom-out" data-aos-delay="200">
+          <img src="/assets/img/hero-img.png" class="img-fluid" alt="">
         </div>
+      </div>
     </div>
 
+  </section><!-- End Hero -->
 
-    <section class="faq-section">
-        <div class="container">
-            <div class="text-center">
-                <h3><b>Ak Automations WhatsApp API Service Provider – FAQ’s</b></h3>
-                <p>Here are six frequently asked questions (FAQs) related to WhatsApp Ak Automations APIs:</p>
+
+
+
+  <main id="main">
+
+    <!-- ======= About Section ======= -->
+    <section id="about" class="about">
+
+      <div class="container" data-aos="fade-up">
+        <div class="row gx-0">
+
+          <div class="col-lg-6 d-flex flex-column justify-content-center" data-aos="fade-up" data-aos-delay="200">
+            <div class="content">
+              <h3>WhatsApp communication, connected</h3>
+              <h2>Give your team a practical way to send customer updates from the tools they already use.</h2>
+              <p>
+                AKAUTOMATIONS provides a web dashboard and API endpoints for connecting linked WhatsApp devices to
+                your business workflow. Send supported text or media messages, manage instances, and schedule customer
+                updates without building every messaging step from scratch.
+              </p>
+              <div class="text-center text-lg-start">
+                <a href="#use-cases"
+                  class="btn-read-more d-inline-flex align-items-center justify-content-center align-self-center">
+                  <span>Explore business use cases</span>
+                  <i class="bi bi-arrow-right"></i>
+                </a>
+              </div>
             </div>
+          </div>
 
-            <!-- Bootstrap Accordion -->
-            <div class="accordion mt-4" id="faqAccordion">
-                <!-- Question 1 -->
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1"
-                            aria-expanded="true">
-                            What is an Ak Automations WhatsApp API?
-                        </button>
-                    </h2>
-                    <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            An Ak Automations WhatsApp API is a set of instruments and methods developed by outsider
-                            developers to interact with WhatsApp’s messaging stage.
-                            It permits developers to integrate WhatsApp features into their applications, even though
-                            WhatsApp formally does not provide a public API for this purpose.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Question 2 -->
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#faq2">
-                            Is it legal to use WhatsApp Ak Automations API?
-                        </button>
-                    </h2>
-                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            The legality of utilizing Ak Automations WhatsApp APIs depends on WhatsApp’s terms of service
-                            and regional laws. Unauthorized use of such APIs might result in legal consequences.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Question 3 -->
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#faq3">
-                            What features could I access with an Ak Automations WhatsApp API?
-                        </button>
-                    </h2>
-                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            Ak Automations WhatsApp APIs commonly offer features like sending and receiving messages,
-                            creating groups, accessing user profiles, sharing media, and more.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Question 4 -->
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#faq4">
-                            How can I ensure information protection and security with WhatsApp Ak Automations APIs?
-                        </button>
-                    </h2>
-                    <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            It’s essential to implement strong encryption, secure authentication methods, and follow
-                            best practices to protect user information and maintain security.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Question 5 -->
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#faq5">
-                            Are there alternatives to informal WhatsApp APIs?
-                        </button>
-                    </h2>
-                    <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            It’s crucial to research legal and ethical considerations before using Ak Automations WhatsApp
-                            APIs. Alternatives may include official WhatsApp Business APIs.
-                        </div>
-                    </div>
-                </div>
-            </div>
+          <div class="col-lg-6 d-flex align-items-center" data-aos="zoom-out" data-aos-delay="200">
+            <img src="/assets/img/1.png" class="img-fluid" alt="">
+          </div>
 
         </div>
+      </div>
+
+    </section><!-- End About Section -->
+
+
+
+    <!-- ======= Values Section ======= -->
+    <section id="values" class="values">
+
+      <div class="container" data-aos="fade-up">
+
+        <header class="section-header">
+          <h2>Built for everyday business communication</h2>
+          <p>Use one connected workflow for useful, timely customer updates.</p>
+        </header>
+
+        <div class="row">
+
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="box">
+              <img src="/assets/img/8.png" class="img-fluid" alt="">
+              <h3>Order updates</h3>
+              <p>Send order confirmations, dispatch notes, and delivery updates from your business workflow.</p>
+            </div>
+          </div>
+
+          <div class="col-lg-4 mt-4 mt-lg-0" data-aos="fade-up" data-aos-delay="400">
+            <div class="box">
+              <img src="/assets/img/13.png" class="img-fluid" alt="">
+              <h3>Appointments</h3>
+              <p>Schedule appointment reminders and follow-ups to help customers stay informed.</p>
+            </div>
+          </div>
+
+          <div class="col-lg-4 mt-4 mt-lg-0" data-aos="fade-up" data-aos-delay="600">
+            <div class="box">
+              <img src="/assets/img/7.png" class="img-fluid" alt="">
+              <h3>Team communication</h3>
+              <p>Manage linked WhatsApp instances and send supported messages through the dashboard or API.</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section><!-- End Values Section -->
+
+    <!-- ======= Business Use Cases Section ======= -->
+    <section id="use-cases" class="counts">
+      <div class="container" data-aos="fade-up">
+
+        <div class="row gy-4">
+
+          <div class="col-lg-3 col-md-6">
+            <div class="count-box">
+              <i class="bi bi-bag-check"></i>
+              <div>
+                <span>Orders</span>
+                <p>Confirmations and delivery updates</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6">
+            <div class="count-box">
+              <i class="bi bi-calendar-check" style="color: #ee6c20;"></i>
+              <div>
+                <span>Bookings</span>
+                <p>Appointment reminders and follow-ups</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6">
+            <div class="count-box">
+              <i class="bi bi-receipt" style="color: #15be56;"></i>
+              <div>
+                <span>Services</span>
+                <p>Service updates and customer follow-ups</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6">
+            <div class="count-box">
+              <i class="bi bi-code-slash" style="color: #bb0852;"></i>
+              <div>
+                <span>Integrations</span>
+                <p>Connect your app to messaging endpoints</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section><!-- End Counts Section -->
+
+    <!-- ======= Features Section ======= -->
+    <section id="features" class="features">
+
+      <div class="container" data-aos="fade-up">
+
+        <header class="section-header">
+          <h2>Features</h2>
+          <p>Useful messaging and device-management tools for your existing business process.</p>
+        </header>
+
+        <div class="row">
+
+          <div class="col-lg-6">
+            <img src="/assets/img/features.png" class="img-fluid" alt="">
+          </div>
+
+          <div class="col-lg-6 mt-5 mt-lg-0 d-flex">
+            <div class="row align-self-center gy-4">
+
+              <div class="col-md-6" data-aos="zoom-out" data-aos-delay="200">
+                <div class="feature-box d-flex align-items-center">
+                  <i class="bi bi-check"></i>
+                  <h3>Text and media messaging</h3>
+                </div>
+              </div>
+
+              <div class="col-md-6" data-aos="zoom-out" data-aos-delay="300">
+                <div class="feature-box d-flex align-items-center">
+                  <i class="bi bi-check"></i>
+                  <h3>Number availability checks</h3>
+                </div>
+              </div>
+
+              <div class="col-md-6" data-aos="zoom-out" data-aos-delay="400">
+                <div class="feature-box d-flex align-items-center">
+                  <i class="bi bi-check"></i>
+                  <h3>Group Management</h3>
+                </div>
+              </div>
+
+              <div class="col-md-6" data-aos="zoom-out" data-aos-delay="500">
+                <div class="feature-box d-flex align-items-center">
+                  <i class="bi bi-check"></i>
+                  <h3>Message scheduling</h3>
+                </div>
+              </div>
+
+              <div class="col-md-6" data-aos="zoom-out" data-aos-delay="600">
+                <div class="feature-box d-flex align-items-center">
+                  <i class="bi bi-check"></i>
+                  <h3>Device Management</h3>
+                </div>
+              </div>
+
+              <div class="col-md-6" data-aos="zoom-out" data-aos-delay="700">
+                <div class="feature-box d-flex align-items-center">
+                  <i class="bi bi-check"></i>
+                  <h3>API endpoints for integrations</h3>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div> <!-- / row -->
+
+        <!-- Feature Tabs -->
+        <div class="row feture-tabs" data-aos="fade-up">
+          <div class="col-lg-6">
+            <h3>What is a WhatsApp API gateway?</h3>
+
+            <!-- Tabs -->
+            <ul class="nav nav-pills mb-3">
+              <li>
+
+              </li>
+
+            </ul><!-- End Tabs -->
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+
+              <div class="tab-pane fade show active" id="tab1">
+                <p>An API gateway lets your website, internal tool, or other application request supported WhatsApp
+                  messaging actions through defined endpoints. AKAUTOMATIONS also provides a dashboard for managing
+                  connected instances and scheduled messages.</p>
+                <div class="d-flex align-items-center mb-2">
+                  <i class="bi bi-check2"></i>
+                  <h4>Connect your existing workflow</h4>
+                </div>
+                <p>Use the dashboard for common tasks, or integrate the available API endpoints with your own
+                  application.</p>
+                <div class="d-flex align-items-center mb-2">
+                  <i class="bi bi-check2"></i>
+                  <h4>Keep customer updates organized</h4>
+                </div>
+                <p>Manage devices, send supported text and media, and schedule eligible messages from one place.</p>
+              </div><!-- End Tab 1 Content -->
+
+            </div>
+
+          </div>
+
+          <div class="col-lg-6">
+            <img src="/assets/img/features-2.png" class="img-fluid" alt="">
+          </div>
+
+        </div><!-- End Feature Tabs -->
+
+        <!-- Feature Icons -->
+        <div class="row feature-icons" data-aos="fade-up">
+          <h3>Bring supported WhatsApp messaging into your business workflow</h3>
+
+          <div class="row">
+
+            <div class="col-xl-4 text-center" data-aos="fade-right" data-aos-delay="100">
+              <img src="/assets/img/features-3.png" class="img-fluid p-4" alt="">
+            </div>
+
+            <div class="col-xl-8 d-flex content">
+              <div class="row align-self-center gy-4">
+
+                <div class="col-md-6 icon-box" data-aos="fade-up">
+                  <i class="ri-line-chart-line"></i>
+                  <div>
+                    <h4>Text messaging</h4>
+                    <p>Send text messages from the dashboard or integrate the text endpoint into your application.</p>
+                  </div>
+                </div>
+
+                <div class="col-md-6 icon-box" data-aos="fade-up" data-aos-delay="100">
+                  <i class="ri-stack-line"></i>
+                  <div>
+                    <h4>Media support</h4>
+                    <p>Send supported images, audio, video, documents, and media links through the available endpoints.</p>
+                  </div>
+                </div>
+
+                <div class="col-md-6 icon-box" data-aos="fade-up" data-aos-delay="200">
+                  <i class="ri-brush-4-line"></i>
+                  <div>
+                    <h4>Number checks</h4>
+                    <p>Check number availability using the dashboard's number-checking tool.</p>
+                  </div>
+                </div>
+
+                <div class="col-md-6 icon-box" data-aos="fade-up" data-aos-delay="300">
+                  <i class="ri-magic-line"></i>
+                  <div>
+                    <h4>Group tools</h4>
+                    <p>Manage supported group information and participants through the available group tools.</p>
+                  </div>
+                </div>
+
+                <div class="col-md-6 icon-box" data-aos="fade-up" data-aos-delay="400">
+                  <i class="ri-command-line"></i>
+                  <div>
+                    <h4>Message scheduling</h4>
+                    <p>Prepare eligible text or media campaigns and schedule them for a future date in the dashboard.</p>
+                  </div>
+                </div>
+
+                <div class="col-md-6 icon-box" data-aos="fade-up" data-aos-delay="500">
+                  <i class="ri-radar-line"></i>
+                  <div>
+                    <h4>API access</h4>
+                    <p>Connect your existing app or internal tools to supported messaging endpoints.</p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+        </div><!-- End Feature Icons -->
+
+      </div>
+
+    </section><!-- End Features Section -->
+
+    <section id="promotions" class="promotions values">
+      <div class="container" data-aos="fade-up">
+        <header class="section-header">
+          <h2>Promote your WhatsApp workflow</h2>
+          <p>Five ready-to-personalize messages to introduce the gateway to potential business customers.</p>
+        </header>
+        <p class="business-note">Personalize these examples and contact businesses appropriately. Only send WhatsApp
+          messages to people who have agreed to receive them.</p>
+
+        <div class="row gy-4 mt-2">
+          <div class="col-lg-4 col-md-6">
+            <article class="promo-card">
+              <h3>1. General business intro</h3>
+              <p class="promo-copy">Namaste [Name], kya aapki team customer updates WhatsApp par manually bhejti hai?
+AKAUTOMATIONS ke API gateway se aap apne app ya business workflow ko WhatsApp messaging se connect kar sakte hain. Kya aap ek short demo dekhna chahenge?</p>
+              <button type="button" class="copy-promo">Copy message</button>
+              <span class="copy-status" aria-live="polite"></span>
+            </article>
+          </div>
+          <div class="col-lg-4 col-md-6">
+            <article class="promo-card">
+              <h3>2. For online stores</h3>
+              <p class="promo-copy">Hi [Name], online orders ke confirmation aur delivery updates ko WhatsApp par bhejne ka workflow simplify karna chahte hain? AKAUTOMATIONS API aapke existing app ko supported WhatsApp messaging endpoints se connect karne mein help karta hai. Details chahiye?</p>
+              <button type="button" class="copy-promo">Copy message</button>
+              <span class="copy-status" aria-live="polite"></span>
+            </article>
+          </div>
+          <div class="col-lg-4 col-md-6">
+            <article class="promo-card">
+              <h3>3. For clinics and appointments</h3>
+              <p class="promo-copy">Namaste [Name], appointments ke reminders aur follow-ups ko time par bhejna aapki team ke liye aasaan ban sakta hai. AKAUTOMATIONS dashboard mein message scheduling aur device management available hai. Kya main aapko iska overview bhejun?</p>
+              <button type="button" class="copy-promo">Copy message</button>
+              <span class="copy-status" aria-live="polite"></span>
+            </article>
+          </div>
+          <div class="col-lg-4 col-md-6">
+            <article class="promo-card">
+              <h3>4. For service businesses</h3>
+              <p class="promo-copy">Hi [Name], service bookings, visit reminders aur customer follow-ups ko ek consistent WhatsApp workflow mein lana chahte hain? AKAUTOMATIONS API aur dashboard aapki team ko messaging tasks manage karne mein madad karte hain. Aapke use case par baat karein?</p>
+              <button type="button" class="copy-promo">Copy message</button>
+              <span class="copy-status" aria-live="polite"></span>
+            </article>
+          </div>
+          <div class="col-lg-4 col-md-6">
+            <article class="promo-card">
+              <h3>5. For developers and agencies</h3>
+              <p class="promo-copy">Hello [Name], client projects ke liye WhatsApp messaging integrate kar rahe hain? AKAUTOMATIONS mein text aur media endpoints, linked-instance management, aur dashboard-based scheduling milti hai. API options aur plans discuss karne ke liye ek quick call book karein?</p>
+              <button type="button" class="copy-promo">Copy message</button>
+              <span class="copy-status" aria-live="polite"></span>
+            </article>
+          </div>
+          <div class="col-lg-4 col-md-6">
+            <article class="promo-card">
+              <h3>6. For customer support teams</h3>
+              <p class="promo-copy">Namaste [Name], kya aapki support team ko customers ko timely status updates bhejne hote hain? AKAUTOMATIONS API aapke existing workflow se supported WhatsApp messages bhejne aur scheduled follow-ups plan karne mein help karta hai. Agar yeh aapke use case ke liye relevant ho, toh ek short demo share karun?</p>
+              <button type="button" class="copy-promo">Copy message</button>
+              <span class="copy-status" aria-live="polite"></span>
+            </article>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- Footer Section -->
-    <div class="footer">
-        <span>Copyright © 2025 Ak Automations All Rights Reserved.</span>
-        <span>Powered by <a href="" target="_blank">ak automations</a></span>
+
+    <!-- ======= Pricing Section ======= -->
+      <section id="pricing" class="pricing">
+      <div class="container" data-aos="fade-up">
+        <header class="section-header">
+          <h2>Pricing</h2>
+          <p>Check our Monthly Pricing</p>
+        </header>
+        <div class="row gy-4" data-aos="fade-left">
+          <% const planImages = { basic: 'pricing-free.png', starter: 'pricing-starter.png', business: 'pricing-business.png', ultimate: 'pricing-ultimate.png' }; %>
+          <% const planColors = ['#07d5c0', '#65c600', '#ff901c', '#ff0071']; %>
+          <% (plans || []).forEach((plan, index) => { %>
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="<%= (index + 1) * 100 %>">
+              <div class="box">
+                <% if (plan.featured) { %><span class="featured">Featured</span><% } %>
+                <h3 style="color: <%= planColors[index % planColors.length] %>;"><%= plan.name %></h3>
+                <div class="price"><sup>₹</sup><%= Number(plan.price).toLocaleString('en-IN') %><span> / <%= plan.durationDays === 30 ? 'mo' : `${plan.durationDays} days` %></span></div>
+                <img src="/assets/img/<%= planImages[plan.slug] || 'pricing-free.png' %>" class="img-fluid" alt="<%= plan.name %>">
+                <ul>
+                  <li><%= plan.manyInstance %> WhatsApp instance<%= plan.manyInstance === 1 ? '' : 's' %></li>
+                  <li><%= plan.dailyMessageLimit ? `${plan.dailyMessageLimit} messages per day` : 'No daily message cap' %></li>
+                  <li><%= plan.maxUniqueRecipients < 0 ? 'Unlimited unique contacts' : `${plan.maxUniqueRecipients} unique contacts per plan term` %></li>
+                  <li>Up to <%= plan.maxRecipientsPerCampaign %> recipients per campaign</li>
+                  <% (plan.features || []).forEach(feature => { %><li><%= feature %></li><% }) %>
+                </ul>
+                <a href="https://wa.me/918299854822?text=<%= encodeURIComponent(`Hello, I am interested in the ${plan.name} for ₹${plan.price}.`) %>" class="btn-buy">Contact us</a>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+     
+   
+    <!-- End Pricing Section -->
+
+    <!-- ======= F.A.Q Section ======= -->
+    <section id="faq" class="faq">
+
+      <div class="container" data-aos="fade-up">
+
+        <header class="section-header">
+          <h2>F.A.Q</h2>
+          <p>Frequently Asked Questions</p>
+        </header>
+
+        <div class="row">
+          <div class="col-lg-6">
+            <!-- F.A.Q List 1-->
+            <div class="accordion accordion-flush" id="faqlist1">
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#faq-content-1">
+                    Do i have to use WhatsApp Business account?
+                  </button>
+                </h2>
+                <div id="faq-content-1" class="accordion-collapse collapse" data-bs-parent="#faqlist1">
+                  <div class="accordion-body">
+                    You don't need to; you may also use standard WhatsApp. However, WhatsApp Business imparts a
+                    professional impression on the user.
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#faq-content-2">
+                    Can i send audio, video, or documents?
+                  </button>
+                </h2>
+                <div id="faq-content-2" class="accordion-collapse collapse" data-bs-parent="#faqlist1">
+                  <div class="accordion-body">
+                    The available endpoints support text and several media types, including images, audio, video, and
+                    documents. Exact options depend on the endpoint.
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#faq-content-3">
+                    Are message delivery and volume unlimited?
+                  </button>
+                </h2>
+                <div id="faq-content-3" class="accordion-collapse collapse" data-bs-parent="#faqlist1">
+                  <div class="accordion-body">
+                    No. Delivery and usage are subject to WhatsApp policies, account limits, recipient availability,
+                    and network conditions. Avoid unsolicited or high-volume messaging.
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#faq-content-4">
+                    How should I message customers responsibly?
+                  </button>
+                </h2>
+                <div id="faq-content-4" class="accordion-collapse collapse" data-bs-parent="#faqlist1">
+                  <div class="accordion-body">
+                    Message customers who have agreed to hear from you, identify your business clearly, and respect
+                    opt-out requests. WhatsApp may apply account-specific limits; this service cannot guarantee
+                    delivery or prevent account restrictions.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+
+            <!-- F.A.Q List 2-->
+            <div class="accordion accordion-flush" id="faqlist2">
+
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#faq2-content-1">
+                    What should I pay close attention to?
+                  </button>
+                </h2>
+                <div id="faq2-content-1" class="accordion-collapse collapse" data-bs-parent="#faqlist2">
+                  <div class="accordion-body">
+                    Use it only for appropriate, consent-based communication and follow WhatsApp's terms and policies.
+                    Do not send spam or unsolicited bulk messages. Account restrictions and delivery outcomes are
+                    controlled by WhatsApp.
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#faq2-content-2">
+                    Is this the official WhatsApp Business Platform API?
+                  </button>
+                </h2>
+                <div id="faq2-content-2" class="accordion-collapse collapse" data-bs-parent="#faqlist2">
+                  <div class="accordion-body">
+                    No. This service connects through a linked WhatsApp Web session using Baileys; it is not the
+                    official WhatsApp Business Platform (Cloud API). Review WhatsApp's terms and assess whether this
+                    integration is appropriate for your business before using it.
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#faq2-content-3">
+                    Can I use the same account in WhatsApp Web?
+                  </button>
+                </h2>
+                <div id="faq2-content-3" class="accordion-collapse collapse" data-bs-parent="#faqlist2">
+                  <div class="accordion-body">
+                    This service uses a linked WhatsApp Web session. Use of other linked devices depends on WhatsApp's
+                    current multi-device behavior and the state of your account.
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#faq2-content-4">
+                    Can my WhatsApp number be banned?
+                  </button>
+                </h2>
+                <div id="faq2-content-4" class="accordion-collapse collapse" data-bs-parent="#faqlist2">
+                  <div class="accordion-body">
+                    WhatsApp may restrict accounts for policy violations or patterns recipients report as spam.
+                    Send relevant messages only to opted-in customers, keep volume appropriate, and follow WhatsApp's
+                    terms. No integration can guarantee an account will never be restricted.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section><!-- End F.A.Q Section -->
+
+
+    <section id="contact" class="contact">
+
+      <div class="container" data-aos="fade-up">
+
+        <header class="section-header">
+          <h2>Contact</h2>
+          <p>Contact Us</p>
+        </header>
+
+        <div class="row gy-4">
+
+          <div class="col-lg-6">
+
+            <div class="row gy-4">
+              <div class="col-md-6">
+                <div class="info-box">
+                  <i class="bi bi-geo-alt"></i>
+                  <h3>Address</h3>
+                  <p><br>New Delhi, India 110080</p>
+                  India <br><br>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-box">
+                  <i class="bi bi-telephone"></i>
+                  <h3>Whatsapp</h3>
+                  <p><a href="https://api.whatsapp.com/send?phone=918299854822&text=Hello">+91 8299 85 4822</a></p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-box">
+                  <i class="bi bi-envelope"></i>
+                  <h3>Email Us</h3>
+                  <p><a
+                      href="/cdn-cgi/l/email-protection#7918171616091d100915161418391e14181015571a1614">anoopdiploma@gmail.com</a>
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-box">
+                  <i class="bi bi-clock"></i>
+                  <h3>Open Hours</h3>
+                  <p>Monday - Friday<br>10:00AM - 05:00PM</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="col-lg-6">
+            <div class="info-box h-100">
+              <i class="bi bi-chat-dots"></i>
+              <h3>Tell us about your workflow</h3>
+              <p>Share what you want to connect, such as order updates, appointment reminders, or an existing app.
+                Our team can help you explore whether the gateway fits your use case.</p>
+              <a class="btn-get-started d-inline-flex align-items-center justify-content-center"
+                href="https://wa.me/918299854822?text=Hello%2C%20I%27d%20like%20to%20discuss%20my%20business%20use%20case%20for%20the%20WhatsApp%20API%20gateway."
+                target="_blank" rel="noopener noreferrer">
+                <span>Message us on WhatsApp</span>
+                <i class="bi bi-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section><!-- End Contact Section -->
+    <!--Start of Tawk.to Script-->
+    <script data-cfasync="false" src="/cdn-cgi/email-decode.min.js"></script>
+    <!--Start of Tawk.to Script-->
+    <script type="text/javascript">
+      var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+      (function () {
+        var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+        s1.async = true;
+        s1.src = 'https://embed.tawk.to/68651953cfa578190992a2ae/1iv5elrm0';
+        s1.charset = 'UTF-8';
+        s1.setAttribute('crossorigin', '*');
+        s0.parentNode.insertBefore(s1, s0);
+      })();
+    </script>
+    <!--End of Tawk.to Script-->
+    <!-- <script type="text/javascript">
+      var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+      (function () {
+        var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+        s1.async = true;
+        s1.src = 'https://embed.tawk.to/6229ca75a34c2456412a5f19/1ftpjtnt3';
+        s1.charset = 'UTF-8';
+        s1.setAttribute('crossorigin', '*');
+        s0.parentNode.insertBefore(s1, s0);
+      })();
+    </script> -->
+
+
+  </main><!-- End #main -->
+
+  <!-- ======= Footer ======= -->
+  <footer id="footer" class="footer">
+
+
+    <div class="footer-top">
+      <div class="container">
+        <div class="row gy-4">
+          <div class="col-lg-5 col-md-12 footer-info">
+            <a href="index.html" class="logo d-flex align-items-center">
+              <img src="/assets/img/logo.png" alt="">
+              <span>Whatsapp API Gateway</span>
+            </a>
+            <p>Connect your business workflow to supported WhatsApp messaging endpoints, device management, and
+              scheduled messages.</p>
+            <div class="social-links mt-3">
+              <a href="#" class="twitter"><i class="bi bi-twitter"></i></a>
+              <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
+              <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
+              <a href="#" class="linkedin"><i class="bi bi-linkedin"></i></a>
+            </div>
+          </div>
+
+          <div class="col-lg-2 col-6 footer-links">
+            <h4>Useful Links</h4>
+            <ul>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Home</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">About us</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Services</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Terms of service</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Privacy policy</a></li>
+            </ul>
+          </div>
+
+          <div class="col-lg-2 col-6 footer-links">
+            <h4>Our Services</h4>
+            <ul>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Web Design</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Web Development</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Product Management</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Marketing</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Graphic Design</a></li>
+            </ul>
+          </div>
+
+          <div class="col-lg-3 col-md-12 footer-contact text-center text-md-start">
+            <h4>Contact Us</h4>
+
+            <p>Sangam Vihar,<br>New Delhi, India 110080</p>
+            India <br><br>
+            <strong>Whatsapp:</strong> <a href="https://api.whatsapp.com/send?phone=918299854822&text=Hello">+91 8299 85
+              4822</a><br>
+            <strong>Email:</strong> <a
+              href="/cdn-cgi/l/email-protection#7918171616091d100915161418391e14181015571a1614"><span
+                class="__cf_email__"
+                data-cfemail="7918171616091d100915161418391e14181015571a1614">[email&#160;protected]</span></a><br>
+            </p>
+          </div>
+
+        </div>
+      </div>
     </div>
 
-    <!-- WhatsApp Floating Button -->
-    <a href="https://api.whatsapp.com/send/?phone=918299854822&text=Hello%20Ak%20Automations" class="whatsapp-btn" target="_blank">
-        <i class="fab fa-whatsapp"></i> WhatsApp Us
-    </a>
+    <div class="container">
+      <div class="copyright">
+        &copy; Copyright <strong><span>AKAUTOMATIONS</span></strong>. All Rights Reserved
+      </div>
+      <div class="credits">
 
-    <!-- Bootstrap Bundle JS -->
-    <script>
-        function toggleTheme() {
-            document.body.classList.toggle("light-mode");
+        Designed by <a href="/#">AKAUTOMATIONS</a>
+      </div>
+    </div>
+  </footer><!-- End Footer -->
+
+  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i
+      class="bi bi-arrow-up-short"></i></a>
+
+  <script data-cfasync="false" src="/cdn-cgi/email-decode.min.js"></script>
+
+  <!-- Vendor JS Files -->
+  <script src="/assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="/assets/vendor/aos/aos.js"></script>
+  <script src="/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="/assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+  <script src="/assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="/assets/vendor/php-email-form/validate.js"></script>
+
+  <script>
+    document.querySelectorAll('.copy-promo').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const card = button.closest('.promo-card');
+        const message = card.querySelector('.promo-copy').innerText.trim();
+        const status = card.querySelector('.copy-status');
+
+        if (!navigator.clipboard || !window.isSecureContext) {
+          status.textContent = 'Clipboard access requires a secure connection. Select the message and copy it manually.';
+          return;
         }
-    </script>
+
+        try {
+          await navigator.clipboard.writeText(message);
+          status.textContent = 'Message copied. Personalize it before sending.';
+        } catch (error) {
+          console.error('Unable to copy promotional message:', error);
+          status.textContent = 'Could not copy the message. Select it and copy manually.';
+        }
+      });
+    });
+  </script>
+
+  <!-- Template Main JS File -->
+  <script src="/assets/js/main.js"></script>
+
 
 </body>
 

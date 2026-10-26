@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Scheduled Messages — AK Automations</title>
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css"
+        />
+        <link rel="stylesheet" href="/css/styles.css" />
+    </head>
+    <body class="user-layout">
+        <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
+            <div class="container-fluid px-4">
+                <a
+                    class="navbar-brand d-flex align-items-center gap-2"
+                    href="/manager/dashboard"
+                >
+                    <span
+                        class="d-inline-flex align-items-center justify-content-center"
+                        style="
+                            width: 38px;
+                            height: 38px;
+                            border-radius: 10px;
+                            background: #fff;
+                            color: var(--gold-dark);
+                            font-weight: 800;
+                        "
+                        >AK</span
+                    >
+                    <span>AK Automations</span>
+                </a>
+                <div class="d-flex align-items-center gap-3 ms-auto">
+                    <span class="text-white-50 small d-none d-md-inline"
+                        >Welcome, <strong><%= user.username %></strong></span
+                    >
+                    <a
+                        class="btn btn-light btn-sm rounded-pill px-3 d-none d-md-inline-flex"
+                        href="/manager/logout"
+                        ><i class="fa-solid fa-right-from-bracket me-1"></i>
+                        Logout</a
+                    >
+                    <button
+                        class="navbar-toggler d-lg-none"
+                        type="button"
+                        id="userSidebarToggle"
+                        aria-label="Open navigation menu"
+                        aria-controls="userSidebar"
+                        aria-expanded="false"
+                    >
+                        <i class="fa-solid fa-bars text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="user-sidebar-overlay" id="userSidebarOverlay"></div>
+        <div class="container-fluid user-app">
+            <div class="row gx-0">
+                <nav
+                    class="col-md-3 col-lg-2 sidebar"
+                    id="userSidebar"
+                    aria-label="Main navigation"
+                >
+                    <div class="position-sticky pt-4 px-3">
+                        <div class="text-center mb-4 pb-3 border-bottom">
+                            <div
+                                class="d-inline-flex align-items-center justify-content-center mx-auto mb-2"
+                                style="
+                                    width: 50px;
+                                    height: 50px;
+                                    border-radius: 12px;
+                                    background: linear-gradient(
+                                        135deg,
+                                        var(--gold-light),
+                                        var(--gold)
+                                    );
+                                    color: #fff;
+                                    font-weight: 800;
+                                    font-size: 1.25rem;
+                                "
+                            >
+                                AK
+                            </div>
+                            <h6 class="mb-0 fw-bold text-uppercase small">
+                                User Panel
+                            </h6>
+                        </div>
+                        <%- include('partials/sidebar-navigation', { activePage: 'schedule' }) %>
+                    </div>
+                </nav>
+
+                <main class="col-md-9 col-lg-10 px-3 px-md-4 py-4">
+                    <div
+                        class="d-flex justify-content-between flex-wrap align-items-center pb-2 mb-4 border-bottom"
+                    >
+                        <div>
+                            <h2 class="fw-bold text-dark mb-1">
+                                Scheduled Messages
+                            </h2>
+                            <small class="text-muted"
+                                >Bulk text ya media message schedule karein aur
+                                delivery analytics dekhein.</small
+                            >
+                        </div>
+                        <button
+                            class="btn btn-outline-success rounded-pill mt-2 mt-md-0"
+                            type="button"
+                            onclick="loadCampaigns()"
+                        >
+                            <i class="fa-solid fa-arrows-rotate me-1"></i>
+                            Refresh
+                        </button>
+                    </div>
+
+                    <div class="alert alert-info py-2" id="planLimitsNotice">
+                        Plan limits load ho rahe hain...
+                    </div>
+                    <% if (user.planStatus === 'Expired' &&
+                    !user.role.includes('admin')) { %>
+                    <div class="alert alert-danger">
+                        Aapka plan expire ho gaya hai. Schedule create ya send
+                        karne se pehle plan renew karein.
+                    </div>
+                    <% } %>
+
+                    <section class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-3 p-md-4">
+                            <h4 class="fw-bold mb-3" id="scheduleFormTitle">
+                                <i
+                                    class="fa-solid fa-calendar-plus text-success me-2"
+                                ></i
+                                >New Schedule
+                            </h4>
+                            <form id="scheduleForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label
+                                            for="scheduleInstance"
+                                            class="form-label fw-semibold"
+                                            >WhatsApp instance</label
+                                        >
+                                        <select
+                                            class="form-select"
+                                            id="scheduleInstance"
+                                            required
+                                        >
+                                            <option value="">
+                                                Instance select karein
+                                            </option>
+                                            <% (user.insdetails ||
+                                            []).forEach(instance => { %>
+                                            <option
+                                                value="<%= instance.Token_Id %>"
+                                            >
+                                                <%= instance.Token_Id %>
+                                            </option>
+                                            <% }) %>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label
+                                            for="scheduleAt"
+                                            class="form-label fw-semibold"
+                                            >Send date &amp; time</label
+                                        >
+                                        <input
+                                            class="form-control"
+                                            id="scheduleAt"
+                                            type="datetime-local"
+                                            required
+                                        />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label
+                                            for="scheduleType"
+                                            class="form-label fw-semibold"
+                                            >Message type</label
+                                        >
+                                        <select
+                                            class="form-select"
+                                            id="scheduleType"
+                                        >
+                                            <option value="text">
+                                                Text message
+                                            </option>
+                                            <option value="image">Image</option>
+                                            <option value="video">Video</option>
+                                            <option value="audio">Audio</option>
+                                            <option value="document">
+                                                Document
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label
+                                            for="scheduleNumbers"
+                                            class="form-label fw-semibold"
+                                            >Mobile numbers (comma
+                                            separated)</label
+                                        >
+                                        <textarea
+                                            class="form-control"
+                                            id="scheduleNumbers"
+                                            rows="2"
+                                            placeholder="919876543210, 918765432109"
+                                            required
+                                        ></textarea>
+                                        <div class="form-text">
+                                            Country code ke saath number
+                                            likhein. Maximum 500 recipients per
+                                            schedule; sirf opted-in contacts ko
+                                            message bhejein.
+                                        </div>
+                                    </div>
+                                    <div class="col-12" id="scheduleTextField">
+                                        <label
+                                            for="scheduleMessage"
+                                            class="form-label fw-semibold"
+                                            >Message</label
+                                        >
+                                        <textarea
+                                            class="form-control"
+                                            id="scheduleMessage"
+                                            rows="3"
+                                            maxlength="4000"
+                                            placeholder="Apna message likhein"
+                                        ></textarea>
+                                    </div>
+                                    <div
+                                        class="col-md-8 d-none"
+                                        id="scheduleMediaFields"
+                                    >
+                                        <label
+                                            for="scheduleUrl"
+                                            class="form-label fw-semibold"
+                                            >Media URL</label
+                                        >
+                                        <input
+                                            class="form-control"
+                                            id="scheduleUrl"
+                                            type="url"
+                                            placeholder="https://example.com/file"
+                                        />
+                                    </div>
+                                    <div
+                                        class="col-12 d-none"
+                                        id="scheduleCaptionField"
+                                    >
+                                        <label
+                                            for="scheduleCaption"
+                                            class="form-label fw-semibold"
+                                            >Caption (optional)</label
+                                        >
+                                        <textarea
+                                            class="form-control"
+                                            id="scheduleCaption"
+                                            rows="3"
+                                            maxlength="1000"
+                                            placeholder="Media caption"
+                                        ></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <button
+                                            class="btn btn-success rounded-pill px-4"
+                                            id="scheduleSubmit"
+                                            type="submit"
+                                        >
+                                            <i
+                                                class="fa-solid fa-calendar-check me-1"
+                                            ></i>
+                                            Schedule message
+                                        </button>
+                                        <button
+                                            class="btn btn-outline-secondary rounded-pill px-4 d-none"
+                                            id="cancelScheduleEdit"
+                                            type="button"
+                                            onclick="cancelScheduleEdit()"
+                                        >
+                                            Cancel edit
+                                        </button>
+                                        <span class="text-muted small ms-2"
+                                            >Device scheduled time par offline
+                                            hua to online aane par sending start
+                                            hogi.</span
+                                        >
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+
+                    <% if (false) { %>
+                    <section
+                        class="card border-0 shadow-sm rounded-4 mb-4"
+                        id="templateScheduler"
+                    >
+                        <div class="card-body p-3 p-md-4">
+                            <h4 class="fw-bold mb-1">
+                                <i
+                                    class="fa-solid fa-file-lines text-success me-2"
+                                ></i
+                                >Message templates
+                            </h4>
+                            <p class="text-muted mb-3">
+                                Pehle message template banayein. Variables ko
+                                <code>{{name}}</code> format mein likhein.
+                            </p>
+                            <form
+                                id="templateForm"
+                                class="border rounded-3 p-3 mb-4"
+                            >
+                                <input type="hidden" id="templateId" />
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label
+                                            for="templateName"
+                                            class="form-label fw-semibold"
+                                            >Template name</label
+                                        >
+                                        <input
+                                            class="form-control"
+                                            id="templateName"
+                                            maxlength="100"
+                                            required
+                                            placeholder="Order update"
+                                        />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label
+                                            for="templateBody"
+                                            class="form-label fw-semibold"
+                                            >Message text</label
+                                        >
+                                        <textarea
+                                            class="form-control"
+                                            id="templateBody"
+                                            rows="3"
+                                            maxlength="4000"
+                                            required
+                                            placeholder="Hello {{name}}, your order {{order_id}} is ready."
+                                        ></textarea>
+                                        <div class="form-text">
+                                            Variable names letters se shuru hon;
+                                            letters, numbers aur underscore use
+                                            kar sakte hain.
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <button
+                                            class="btn btn-success rounded-pill px-4"
+                                            id="templateSubmit"
+                                            type="submit"
+                                        >
+                                            Save template
+                                        </button>
+                                        <button
+                                            class="btn btn-outline-secondary rounded-pill px-4 d-none"
+                                            id="cancelTemplateEdit"
+                                            type="button"
+                                        >
+                                            Cancel edit
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Template</th>
+                                            <th>Variables / Excel columns</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="templateTableBody">
+                                        <tr>
+                                            <td
+                                                colspan="3"
+                                                class="text-center text-muted py-3"
+                                            >
+                                                Templates load ho rahe hain...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-3 p-md-4">
+                            <h4 class="fw-bold mb-1" id="templateScheduleTitle">
+                                <i
+                                    class="fa-solid fa-calendar-plus text-success me-2"
+                                ></i
+                                >Template Scheduler
+                            </h4>
+                            <p class="text-muted">
+                                Excel browser mein hi read/export hogi. Server
+                                ko sirf validated JSON recipients milenge.
+                            </p>
+                            <form id="templateScheduleForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label
+                                            for="templateScheduleInstance"
+                                            class="form-label fw-semibold"
+                                            >WhatsApp instance</label
+                                        >
+                                        <select
+                                            class="form-select"
+                                            id="templateScheduleInstance"
+                                            required
+                                        >
+                                            <option value="">
+                                                Instance select karein
+                                            </option>
+                                            <% (user.insdetails ||
+                                            []).forEach(instance => { %>
+                                            <option
+                                                value="<%= instance.Token_Id %>"
+                                            >
+                                                <%= instance.Token_Id %>
+                                            </option>
+                                            <% }) %>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label
+                                            for="scheduleTemplate"
+                                            class="form-label fw-semibold"
+                                            >Message template</label
+                                        >
+                                        <select
+                                            class="form-select"
+                                            id="scheduleTemplate"
+                                            required
+                                        >
+                                            <option value="">
+                                                Pehle template banayein ya
+                                                select karein
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label
+                                            for="templateScheduleAt"
+                                            class="form-label fw-semibold"
+                                            >Send date &amp; time</label
+                                        >
+                                        <input
+                                            class="form-control"
+                                            id="templateScheduleAt"
+                                            type="datetime-local"
+                                            required
+                                        />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label
+                                            for="templateSpreadsheet"
+                                            class="form-label fw-semibold"
+                                            >Excel recipient file (.xlsx)</label
+                                        >
+                                        <input
+                                            class="form-control"
+                                            id="templateSpreadsheet"
+                                            type="file"
+                                            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                            required
+                                        />
+                                        <div class="form-text">
+                                            Excel ko browser mein read kiya
+                                            jayega, upload server par nahi hoga.
+                                            Exported file ke mobile aur
+                                            {{variable}} columns use karein. Max
+                                            500 opted-in contacts.
+                                        </div>
+                                        <div
+                                            class="form-text"
+                                            id="spreadsheetStatus"
+                                            aria-live="polite"
+                                        ></div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div
+                                            class="alert alert-light border mb-0"
+                                            id="templatePreview"
+                                        >
+                                            Template preview select karne par
+                                            yahan dikhega.
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <button
+                                            class="btn btn-success rounded-pill px-4"
+                                            id="templateScheduleSubmit"
+                                            type="submit"
+                                        >
+                                            <i
+                                                class="fa-solid fa-calendar-check me-1"
+                                            ></i>
+                                            Schedule template messages
+                                        </button>
+                                        <button
+                                            class="btn btn-outline-secondary rounded-pill px-4 d-none"
+                                            id="cancelTemplateScheduleEdit"
+                                            type="button"
+                                        >
+                                            Cancel edit
+                                        </button>
+                                        <span class="text-muted small ms-2"
+                                            >Scheduled time par instance offline
+                                            ho to online aane par sending start
+                                            hogi.</span
+                                        >
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+
+                    <section class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-3 p-md-4">
+                            <div
+                                class="d-flex justify-content-between align-items-center mb-3"
+                            >
+                                <h4 class="fw-bold mb-0">Template schedules</h4>
+                                <button
+                                    class="btn btn-outline-success btn-sm rounded-pill"
+                                    type="button"
+                                    id="refreshTemplateSchedules"
+                                >
+                                    Refresh
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Scheduled time</th>
+                                            <th>Template</th>
+                                            <th>Instance</th>
+                                            <th>Recipients</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="templateScheduleTableBody">
+                                        <tr>
+                                            <td
+                                                colspan="6"
+                                                class="text-center text-muted py-3"
+                                            >
+                                                Template schedules load ho rahe
+                                                hain...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                    <% } %>
+
+                    <section class="card border-0 shadow-sm rounded-4">
+                        <div class="card-body p-3 p-md-4">
+                            <div
+                                class="d-flex justify-content-between align-items-center mb-3"
+                            >
+                                <h4 class="fw-bold mb-0">
+                                    Schedules &amp; delivery analytics
+                                </h4>
+                                <span
+                                    class="badge bg-success rounded-pill"
+                                    id="scheduleTotal"
+                                    >0 schedules</span
+                                >
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Scheduled time</th>
+                                            <th>Instance</th>
+                                            <th>Type</th>
+                                            <th>Recipients</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="scheduleTableBody">
+                                        <tr>
+                                            <td
+                                                colspan="6"
+                                                class="text-center text-muted py-4"
+                                            >
+                                                Schedules load ho rahe hain...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                    <%- include('partials/footer') %>
+                </main>
+            </div>
+        </div>
+
+        <div
+            class="modal fade"
+            id="scheduleAnalyticsModal"
+            tabindex="-1"
+            aria-labelledby="analyticsTitle"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content border-0 rounded-4">
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title fw-bold" id="analyticsTitle">
+                                Delivery analytics
+                            </h5>
+                            <div
+                                class="small text-muted"
+                                id="analyticsMeta"
+                            ></div>
+                        </div>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-2 mb-3" id="analyticsSummary"></div>
+                        <div class="bg-light rounded-3 p-3 mb-3">
+                            <div class="fw-semibold mb-1">Message details</div>
+                            <div
+                                class="small text-break"
+                                id="analyticsMessage"
+                            ></div>
+                        </div>
+                        <div class="table-responsive">
+                            <table
+                                class="table table-sm table-hover align-middle"
+                            >
+                                <thead>
+                                    <tr>
+                                        <th>Mobile number</th>
+                                        <th>Status</th>
+                                        <th>Sent at / Failure reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="analyticsRecipients"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+        <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+        <script src="/js/user-navigation.js"></script>
+        <script>
+            const scheduleType = document.getElementById('scheduleType')
+            const scheduleForm = document.getElementById('scheduleForm')
+            const scheduleModal = new bootstrap.Modal(
+                document.getElementById('scheduleAnalyticsModal')
+            )
+            let editingCampaignId = null
+            let maxRecipientsPerCampaign = 500
+            const stateClasses = {
+                scheduled: 'bg-primary',
+                processing: 'bg-info text-dark',
+                completed: 'bg-success',
+                partial: 'bg-warning text-dark',
+                failed: 'bg-danger',
+                cancelled: 'bg-secondary',
+            }
+
+            function updateScheduleFields() {
+                const media = scheduleType.value !== 'text'
+                document
+                    .getElementById('scheduleTextField')
+                    .classList.toggle('d-none', media)
+                document
+                    .getElementById('scheduleMediaFields')
+                    .classList.toggle('d-none', !media)
+                document
+                    .getElementById('scheduleCaptionField')
+                    .classList.toggle('d-none', !media)
+                document.getElementById('scheduleMessage').required = !media
+                document.getElementById('scheduleUrl').required = media
+            }
+            scheduleType.addEventListener('change', updateScheduleFields)
+            updateScheduleFields()
+
+            function addCell(row, value, className = '') {
+                const cell = document.createElement('td')
+                cell.className = className
+                cell.textContent = value
+                row.append(cell)
+                return cell
+            }
+
+            function statusBadge(status) {
+                const badge = document.createElement('span')
+                badge.className = `badge ${
+                    stateClasses[status] || 'bg-secondary'
+                }`
+                badge.textContent = status
+                return badge
+            }
+
+            function showNotice(type, message) {
+                if (
+                    window.toastr &&
+                    typeof window.toastr[type] === 'function'
+                ) {
+                    window.toastr[type](message)
+                } else {
+                    window.alert(message)
+                }
+            }
+
+            async function loadPlanLimits() {
+                const response = await fetch('/manager/plan-summary')
+                const result = await response.json()
+                if (!response.ok || result.error)
+                    throw new Error(result.message || 'Plan limits load nahi ho sake.')
+                const plan = result.data
+                maxRecipientsPerCampaign = plan.dailyMessageLimit
+                    ? Math.min(plan.maxRecipientsPerCampaign, plan.dailyMessageLimit)
+                    : plan.maxRecipientsPerCampaign
+                const messages = plan.dailyMessageLimit
+                    ? `${plan.dailyMessagesSent + plan.dailyMessagesReserved}/${plan.dailyMessageLimit} messages used today`
+                    : 'no daily message cap'
+                const contacts = plan.maxUniqueRecipients < 0
+                    ? 'unlimited contacts'
+                    : `${plan.uniqueRecipientsUsed}/${plan.maxUniqueRecipients} unique contacts used for this plan`
+                document.getElementById('planLimitsNotice').textContent =
+                    `${plan.name}: up to ${maxRecipientsPerCampaign} recipients per campaign; ${messages}; ${contacts}.`
+            }
+
+            function setEditingState(campaign) {
+                editingCampaignId = campaign?._id || null
+                document.getElementById('scheduleFormTitle').innerHTML =
+                    editingCampaignId
+                        ? '<i class="fa-solid fa-pen-to-square text-primary me-2"></i>Edit Schedule'
+                        : '<i class="fa-solid fa-calendar-plus text-success me-2"></i>New Schedule'
+                const submit = document.getElementById('scheduleSubmit')
+                submit.innerHTML = editingCampaignId
+                    ? '<i class="fa-solid fa-floppy-disk me-1"></i> Save changes'
+                    : '<i class="fa-solid fa-calendar-check me-1"></i> Schedule message'
+                document
+                    .getElementById('cancelScheduleEdit')
+                    .classList.toggle('d-none', !editingCampaignId)
+            }
+
+            function cancelScheduleEdit() {
+                scheduleForm.reset()
+                setEditingState(null)
+                updateScheduleFields()
+            }
+
+            async function editCampaign(id) {
+                try {
+                    const response = await fetch(
+                        `/manager/scheduled-messages/${encodeURIComponent(id)}`
+                    )
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message || 'Schedule details load nahi hue.'
+                        )
+                    const campaign = result.data
+                    if (
+                        campaign.status !== 'scheduled' ||
+                        new Date(campaign.scheduledAt) <= new Date()
+                    ) {
+                        throw new Error(
+                            'Sirf future scheduled message edit kiya ja sakta hai.'
+                        )
+                    }
+                    document.getElementById('scheduleInstance').value =
+                        campaign.tokenId
+                    document.getElementById('scheduleAt').value = new Date(
+                        new Date(campaign.scheduledAt).getTime() -
+                            new Date().getTimezoneOffset() * 60000
+                    )
+                        .toISOString()
+                        .slice(0, 16)
+                    document.getElementById('scheduleType').value =
+                        campaign.type
+                    document.getElementById('scheduleNumbers').value =
+                        campaign.recipients
+                            .map((recipient) => recipient.number)
+                            .join(', ')
+                    document.getElementById('scheduleMessage').value =
+                        campaign.message || ''
+                    document.getElementById('scheduleUrl').value =
+                        campaign.url || ''
+                    document.getElementById('scheduleCaption').value =
+                        campaign.caption || ''
+                    setEditingState(campaign)
+                    updateScheduleFields()
+                    document
+                        .getElementById('scheduleForm')
+                        .scrollIntoView({ behavior: 'smooth', block: 'start' })
+                } catch (error) {
+                    showNotice('error', error.message)
+                }
+            }
+
+            async function loadCampaigns() {
+                const body = document.getElementById('scheduleTableBody')
+                try {
+                    const response = await fetch('/manager/scheduled-messages')
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message || 'Schedules load nahi ho sake.'
+                        )
+                    body.replaceChildren()
+                    document.getElementById(
+                        'scheduleTotal'
+                    ).textContent = `${result.data.length} schedules`
+                    if (!result.data.length) {
+                        const row = body.insertRow()
+                        const cell = row.insertCell()
+                        cell.colSpan = 6
+                        cell.className = 'text-center text-muted py-4'
+                        cell.textContent =
+                            'Abhi koi scheduled message nahi hai.'
+                        return
+                    }
+
+                    result.data.forEach((campaign) => {
+                        const row = body.insertRow()
+                        addCell(
+                            row,
+                            new Date(campaign.scheduledAt).toLocaleString()
+                        )
+                        addCell(row, campaign.tokenId, 'text-break')
+                        addCell(row, campaign.type)
+                        addCell(
+                            row,
+                            `${campaign.counts.sent} sent / ${campaign.counts.failed} failed / ${campaign.counts.pending} pending / ${campaign.counts.cancelled} cancelled`
+                        )
+                        const statusCell = row.insertCell()
+                        statusCell.append(statusBadge(campaign.status))
+                        const actions = row.insertCell()
+                        actions.className = 'text-nowrap'
+                        const detailsButton = document.createElement('button')
+                        detailsButton.type = 'button'
+                        detailsButton.className =
+                            'btn btn-outline-primary btn-sm rounded-pill me-1'
+                        detailsButton.textContent = 'Details'
+                        detailsButton.addEventListener('click', () =>
+                            showAnalytics(campaign._id)
+                        )
+                        actions.append(detailsButton)
+                        if (campaign.status === 'scheduled') {
+                            const editButton = document.createElement('button')
+                            editButton.type = 'button'
+                            editButton.className =
+                                'btn btn-outline-secondary btn-sm rounded-pill me-1'
+                            editButton.textContent = 'Edit'
+                            editButton.addEventListener('click', () =>
+                                editCampaign(campaign._id)
+                            )
+                            actions.append(editButton)
+                            const cancelButton =
+                                document.createElement('button')
+                            cancelButton.type = 'button'
+                            cancelButton.className =
+                                'btn btn-outline-warning btn-sm rounded-pill me-1'
+                            cancelButton.textContent = 'Cancel'
+                            cancelButton.addEventListener('click', () =>
+                                cancelCampaign(campaign._id)
+                            )
+                            actions.append(cancelButton)
+                        }
+                        if (campaign.status !== 'processing') {
+                            const deleteButton =
+                                document.createElement('button')
+                            deleteButton.type = 'button'
+                            deleteButton.className =
+                                'btn btn-danger btn-sm rounded-pill'
+                            deleteButton.textContent = 'Delete'
+                            deleteButton.addEventListener('click', () =>
+                                deleteCampaign(campaign._id)
+                            )
+                            actions.append(deleteButton)
+                        }
+                    })
+                } catch (error) {
+                    body.replaceChildren()
+                    const row = body.insertRow()
+                    const cell = row.insertCell()
+                    cell.colSpan = 6
+                    cell.className = 'text-center text-danger py-4'
+                    cell.textContent = error.message
+                }
+            }
+
+            async function showAnalytics(
+                id,
+                endpoint = '/manager/scheduled-messages'
+            ) {
+                try {
+                    const response = await fetch(
+                        `${endpoint}/${encodeURIComponent(id)}`
+                    )
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message || 'Analytics load nahi ho saki.'
+                        )
+                    const campaign = result.data
+                    document.getElementById('analyticsTitle').textContent = `${
+                        campaign.templateName || campaign.type
+                    } message delivery`
+                    document.getElementById('analyticsMeta').textContent = `${
+                        campaign.tokenId
+                    } · ${new Date(campaign.scheduledAt).toLocaleString()}`
+                    const messageDetails =
+                        document.getElementById('analyticsMessage')
+                    if (campaign.type === 'text') {
+                        messageDetails.textContent =
+                            campaign.message || 'No message text'
+                    } else {
+                        messageDetails.textContent =
+                            [campaign.url, campaign.caption]
+                                .filter(Boolean)
+                                .join(' — ') || 'No media details'
+                    }
+
+                    const summary = document.getElementById('analyticsSummary')
+                    summary.replaceChildren()
+                    ;[
+                        [
+                            'Total',
+                            campaign.recipients.length,
+                            'bg-light text-dark',
+                        ],
+                        ['Sent', campaign.counts.sent, 'bg-success text-white'],
+                        [
+                            'Failed',
+                            campaign.counts.failed,
+                            'bg-danger text-white',
+                        ],
+                        [
+                            'Pending',
+                            campaign.counts.pending,
+                            'bg-warning text-dark',
+                        ],
+                        [
+                            'Cancelled',
+                            campaign.counts.cancelled,
+                            'bg-secondary text-white',
+                        ],
+                    ].forEach(([label, value, color]) => {
+                        const column = document.createElement('div')
+                        column.className = 'col-6 col-md'
+                        const card = document.createElement('div')
+                        card.className = `rounded-3 p-3 text-center ${color}`
+                        const title = document.createElement('div')
+                        title.className = 'small'
+                        title.textContent = label
+                        const count = document.createElement('strong')
+                        count.className = 'fs-4 d-block'
+                        count.textContent = value
+                        card.append(title, count)
+                        column.append(card)
+                        summary.append(column)
+                    })
+
+                    const recipients = document.getElementById(
+                        'analyticsRecipients'
+                    )
+                    recipients.replaceChildren()
+                    campaign.recipients.forEach((recipient) => {
+                        const row = recipients.insertRow()
+                        addCell(row, recipient.number)
+                        const status = row.insertCell()
+                        status.append(statusBadge(recipient.status))
+                        const outcome =
+                            recipient.status === 'sent' && recipient.sentAt
+                                ? `Sent ${new Date(
+                                      recipient.sentAt
+                                  ).toLocaleString()}`
+                                : recipient.failureReason ||
+                                  (recipient.status === 'pending'
+                                      ? 'Waiting for delivery'
+                                      : '—')
+                        addCell(row, outcome)
+                    })
+                    scheduleModal.show()
+                } catch (error) {
+                    showNotice('error', error.message)
+                }
+            }
+
+            async function cancelCampaign(id) {
+                if (
+                    !confirm(
+                        'Kya aap is scheduled message ko cancel karna chahte hain?'
+                    )
+                )
+                    return
+                try {
+                    const response = await fetch(
+                        `/manager/scheduled-messages/${encodeURIComponent(
+                            id
+                        )}/cancel`,
+                        { method: 'POST' }
+                    )
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message || 'Schedule cancel nahi ho saka.'
+                        )
+                    showNotice('success', result.message)
+                    loadCampaigns()
+                } catch (error) {
+                    showNotice('error', error.message)
+                }
+            }
+
+            async function deleteCampaign(id) {
+                if (
+                    !confirm(
+                        'Is schedule aur iske delivery records ko permanently delete karein?'
+                    )
+                )
+                    return
+                try {
+                    const response = await fetch(
+                        `/manager/scheduled-messages/${encodeURIComponent(id)}`,
+                        { method: 'DELETE' }
+                    )
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message || 'Schedule delete nahi ho saka.'
+                        )
+                    showNotice('success', result.message)
+                    if (editingCampaignId === id) cancelScheduleEdit()
+                    await loadCampaigns()
+                } catch (error) {
+                    showNotice('error', error.message)
+                }
+            }
+
+            if (false) {
+            const templateForm = document.getElementById('templateForm')
+            const templateScheduleForm = document.getElementById(
+                'templateScheduleForm'
+            )
+            const templateSelector = document.getElementById('scheduleTemplate')
+            const templateWorkbookInput = document.getElementById(
+                'templateSpreadsheet'
+            )
+            let templatesById = new Map()
+            let editingTemplateId = null
+            let editingTemplateScheduleId = null
+
+            function resetTemplateForm() {
+                editingTemplateId = null
+                templateForm.reset()
+                document.getElementById('templateId').value = ''
+                document.getElementById('templateSubmit').textContent =
+                    'Save template'
+                document
+                    .getElementById('cancelTemplateEdit')
+                    .classList.add('d-none')
+            }
+
+            function resetTemplateScheduleForm() {
+                editingTemplateScheduleId = null
+                templateScheduleForm.reset()
+                templateWorkbookInput.required = true
+                document.getElementById('templateScheduleTitle').innerHTML =
+                    '<i class="fa-solid fa-calendar-plus text-success me-2"></i>Template Scheduler'
+                document.getElementById('templateScheduleSubmit').innerHTML =
+                    '<i class="fa-solid fa-calendar-check me-1"></i> Schedule template messages'
+                document
+                    .getElementById('cancelTemplateScheduleEdit')
+                    .classList.add('d-none')
+                document.getElementById('templatePreview').textContent =
+                    'Template preview select karne par yahan dikhega.'
+            }
+
+            function updateTemplatePreview() {
+                const template = templatesById.get(templateSelector.value)
+                const preview = document.getElementById('templatePreview')
+                if (!template) {
+                    preview.textContent =
+                        'Template preview select karne par yahan dikhega.'
+                    return
+                }
+                preview.replaceChildren()
+                const title = document.createElement('strong')
+                title.textContent = `${template.name} · Excel columns: mobile${
+                    template.variables.length
+                        ? `, ${template.variables.join(', ')}`
+                        : ''
+                }`
+                const message = document.createElement('div')
+                message.className = 'mt-2'
+                message.textContent = template.body
+                preview.append(title, message)
+            }
+
+            async function loadTemplates(selectedId = templateSelector.value) {
+                const body = document.getElementById('templateTableBody')
+                try {
+                    const response = await fetch('/manager/message-templates')
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message || 'Templates load nahi ho sake.'
+                        )
+                    templatesById = new Map(
+                        result.data.map((template) => [template._id, template])
+                    )
+                    templateSelector.replaceChildren()
+                    const placeholder = document.createElement('option')
+                    placeholder.value = ''
+                    placeholder.textContent = templatesById.size
+                        ? 'Template select karein'
+                        : 'Pehle template banayein'
+                    templateSelector.append(placeholder)
+                    for (const template of templatesById.values()) {
+                        const option = document.createElement('option')
+                        option.value = template._id
+                        option.textContent = template.name
+                        templateSelector.append(option)
+                    }
+                    if (selectedId && templatesById.has(selectedId))
+                        templateSelector.value = selectedId
+
+                    body.replaceChildren()
+                    if (!result.data.length) {
+                        const row = body.insertRow()
+                        const cell = row.insertCell()
+                        cell.colSpan = 3
+                        cell.className = 'text-center text-muted py-3'
+                        cell.textContent = 'Abhi koi template nahi hai.'
+                        updateTemplatePreview()
+                        return
+                    }
+                    for (const template of result.data) {
+                        const row = body.insertRow()
+                        addCell(row, template.name)
+                        addCell(
+                            row,
+                            template.variables.length
+                                ? template.variables.join(', ')
+                                : 'No variables'
+                        )
+                        const actions = row.insertCell()
+                        actions.className = 'text-nowrap'
+                        const exportButton = document.createElement('button')
+                        exportButton.type = 'button'
+                        exportButton.className =
+                            'btn btn-outline-success btn-sm rounded-pill me-1'
+                        exportButton.textContent = 'Export Excel'
+                        exportButton.addEventListener('click', () =>
+                            exportTemplateWorkbook(template)
+                        )
+                        actions.append(exportButton)
+
+                        const editButton = document.createElement('button')
+                        editButton.type = 'button'
+                        editButton.className =
+                            'btn btn-outline-secondary btn-sm rounded-pill me-1'
+                        editButton.textContent = 'Edit'
+                        editButton.addEventListener('click', () => {
+                            editingTemplateId = template._id
+                            document.getElementById('templateId').value =
+                                template._id
+                            document.getElementById('templateName').value =
+                                template.name
+                            document.getElementById('templateBody').value =
+                                template.body
+                            document.getElementById(
+                                'templateSubmit'
+                            ).textContent = 'Save changes'
+                            document
+                                .getElementById('cancelTemplateEdit')
+                                .classList.remove('d-none')
+                            templateForm.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                            })
+                        })
+                        actions.append(editButton)
+
+                        const deleteButton = document.createElement('button')
+                        deleteButton.type = 'button'
+                        deleteButton.className =
+                            'btn btn-outline-danger btn-sm rounded-pill'
+                        deleteButton.textContent = 'Delete'
+                        deleteButton.addEventListener('click', () =>
+                            deleteTemplate(template._id)
+                        )
+                        actions.append(deleteButton)
+                    }
+                    updateTemplatePreview()
+                } catch (error) {
+                    body.replaceChildren()
+                    const row = body.insertRow()
+                    const cell = row.insertCell()
+                    cell.colSpan = 3
+                    cell.className = 'text-center text-danger py-3'
+                    cell.textContent = error.message
+                }
+            }
+
+            function exportTemplateWorkbook(template) {
+                if (!window.XLSX) {
+                    showNotice(
+                        'error',
+                        'Excel browser library load nahi hui. Page reload karke dobara try karein.'
+                    )
+                    return
+                }
+                const workbook = XLSX.utils.book_new()
+                const headers = ['mobile', ...template.variables]
+                const sheet = XLSX.utils.aoa_to_sheet([headers])
+                sheet['!cols'] = headers.map((header) => ({
+                    wch: Math.max(18, header.length + 4),
+                }))
+                XLSX.utils.book_append_sheet(workbook, sheet, 'Recipients')
+                const safeName =
+                    template.name
+                        .replace(/[^A-Za-z0-9_-]+/g, '-')
+                        .replace(/^-|-$/g, '') || 'template'
+                XLSX.writeFile(workbook, `${safeName}-recipients.xlsx`)
+            }
+
+            function normalizeSpreadsheetNumber(value) {
+                if (typeof value === 'number' && Number.isFinite(value)) {
+                    if (!Number.isSafeInteger(value)) return null
+                    value = String(value)
+                }
+                if (!/^\+?[\d\s()-]+$/.test(String(value || ''))) return null
+                const number = String(value).replace(/\D/g, '')
+                return number.length >= 7 && number.length <= 15 ? number : null
+            }
+
+            async function readTemplateWorkbook(file, template) {
+                if (!window.XLSX)
+                    throw new Error(
+                        'Excel browser library load nahi hui. Page reload karke dobara try karein.'
+                    )
+                if (!file || !/\.xlsx$/i.test(file.name))
+                    throw new Error('Please .xlsx Excel file select karein.')
+                if (file.size > 2 * 1024 * 1024)
+                    throw new Error('Excel file 2 MB se chhoti honi chahiye.')
+                let workbook
+                try {
+                    workbook = XLSX.read(await file.arrayBuffer(), {
+                        type: 'array',
+                        cellDates: false,
+                    })
+                } catch {
+                    throw new Error(
+                        'Excel file read nahi ho saki. Valid .xlsx workbook select karein.'
+                    )
+                }
+                const firstSheet = workbook.SheetNames[0]
+                if (!firstSheet)
+                    throw new Error('Excel file mein worksheet nahi mili.')
+                const rows = XLSX.utils.sheet_to_json(
+                    workbook.Sheets[firstSheet],
+                    {
+                        header: 1,
+                        defval: '',
+                        raw: false,
+                    }
+                )
+                if (!rows.length)
+                    throw new Error('Excel file mein header row nahi hai.')
+
+                const normalizeHeader = (value) =>
+                    String(value || '')
+                        .trim()
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]/g, '')
+                const headers = rows[0].map(normalizeHeader)
+                const usedHeaders = headers.filter(Boolean)
+                if (new Set(usedHeaders).size !== usedHeaders.length)
+                    throw new Error(
+                        'Excel file mein duplicate column headers hain.'
+                    )
+                const mobileColumn = headers.findIndex((header) =>
+                    [
+                        'mobile',
+                        'mobilenumber',
+                        'phone',
+                        'phonenumber',
+                        'number',
+                        'contactnumber',
+                    ].includes(header)
+                )
+                if (mobileColumn < 0)
+                    throw new Error('Excel header mein mobile column nahi hai.')
+                const variableColumns = new Map()
+                for (const variable of template.variables) {
+                    const column = headers.indexOf(normalizeHeader(variable))
+                    if (column < 0)
+                        throw new Error(
+                            `Excel file mein "${variable}" column nahi mila.`
+                        )
+                    variableColumns.set(variable, column)
+                }
+
+                const dataRows = rows
+                    .slice(1)
+                    .filter((row) =>
+                        row.some((value) => String(value ?? '').trim())
+                    )
+                if (!dataRows.length || dataRows.length > 500)
+                    throw new Error(
+                        'Excel file mein 1 se 500 recipient rows honi chahiye.'
+                    )
+                const seenNumbers = new Set()
+                return dataRows.map((row, index) => {
+                    const number = normalizeSpreadsheetNumber(row[mobileColumn])
+                    if (!number)
+                        throw new Error(
+                            `Row ${
+                                index + 2
+                            }: country code ke saath valid mobile number enter karein.`
+                        )
+                    if (seenNumbers.has(number))
+                        throw new Error(
+                            `Row ${index + 2}: mobile number duplicate hai.`
+                        )
+                    seenNumbers.add(number)
+                    const variables = {}
+                    for (const [variable, column] of variableColumns) {
+                        const value = String(row[column] ?? '').trim()
+                        if (!value)
+                            throw new Error(
+                                `Row ${
+                                    index + 2
+                                }: "${variable}" blank nahi ho sakta.`
+                            )
+                        variables[variable] = value
+                    }
+                    const message = template.body.replace(
+                        /{{\s*([A-Za-z][A-Za-z0-9_]*)\s*}}/g,
+                        (_, key) => variables[key] || ''
+                    )
+                    if (message.length > 4000)
+                        throw new Error(
+                            `Row ${
+                                index + 2
+                            }: message 4,000 characters se bada hai.`
+                        )
+                    return { number, variables }
+                })
+            }
+
+            templateWorkbookInput.addEventListener('change', async () => {
+                const status = document.getElementById('spreadsheetStatus')
+                const file = templateWorkbookInput.files[0]
+                const template = templatesById.get(templateSelector.value)
+                if (!file || !template) {
+                    status.textContent = 'Pehle template select karein.'
+                    return
+                }
+                try {
+                    const recipients = await readTemplateWorkbook(
+                        file,
+                        template
+                    )
+                    status.textContent = `${recipients.length} recipients validate ho gaye. Schedule karne par data JSON ke roop mein save hoga.`
+                } catch (error) {
+                    status.textContent = error.message
+                }
+            })
+
+            templateForm.addEventListener('submit', async (event) => {
+                event.preventDefault()
+                const payload = {
+                    name: document.getElementById('templateName').value,
+                    body: document.getElementById('templateBody').value,
+                }
+                try {
+                    const response = await fetch(
+                        editingTemplateId
+                            ? `/manager/message-templates/${encodeURIComponent(
+                                  editingTemplateId
+                              )}`
+                            : '/manager/message-templates',
+                        {
+                            method: editingTemplateId ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload),
+                        }
+                    )
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message || 'Template save nahi ho saka.'
+                        )
+                    showNotice(
+                        'success',
+                        editingTemplateId
+                            ? 'Template update ho gaya.'
+                            : 'Template create ho gaya.'
+                    )
+                    const selectedId = result.data._id
+                    resetTemplateForm()
+                    await loadTemplates(selectedId)
+                } catch (error) {
+                    showNotice('error', error.message)
+                }
+            })
+
+            async function deleteTemplate(id) {
+                if (
+                    !confirm(
+                        'Is message template ko delete karein? Existing scheduled messages apne saved text se continue honge.'
+                    )
+                )
+                    return
+                try {
+                    const response = await fetch(
+                        `/manager/message-templates/${encodeURIComponent(id)}`,
+                        { method: 'DELETE' }
+                    )
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message || 'Template delete nahi ho saka.'
+                        )
+                    showNotice('success', result.message)
+                    if (editingTemplateId === id) resetTemplateForm()
+                    await loadTemplates()
+                } catch (error) {
+                    showNotice('error', error.message)
+                }
+            }
+
+            templateSelector.addEventListener('change', updateTemplatePreview)
+            document
+                .getElementById('cancelTemplateEdit')
+                .addEventListener('click', resetTemplateForm)
+            document
+                .getElementById('cancelTemplateScheduleEdit')
+                .addEventListener('click', resetTemplateScheduleForm)
+
+            templateScheduleForm.addEventListener('submit', async (event) => {
+                event.preventDefault()
+                const submit = document.getElementById('templateScheduleSubmit')
+                submit.disabled = true
+                try {
+                    const requestedRecipients = [
+                        ...new Set(
+                            document
+                                .getElementById('scheduleNumbers')
+                                .value.split(',')
+                                .map((number) => number.replace(/\D/g, ''))
+                                .filter(Boolean)
+                        ),
+                    ]
+                    if (requestedRecipients.length > maxRecipientsPerCampaign) {
+                        throw new Error(
+                            `Your plan allows up to ${maxRecipientsPerCampaign} recipients per campaign.`
+                        )
+                    }
+                    const scheduledAt = new Date(
+                        document.getElementById('templateScheduleAt').value
+                    )
+                    if (!Number.isFinite(scheduledAt.getTime()))
+                        throw new Error('Valid date aur time select karein.')
+                    const template = templatesById.get(templateSelector.value)
+                    if (!template)
+                        throw new Error('Message template select karein.')
+                    const payload = {
+                        tokenId: document.getElementById(
+                            'templateScheduleInstance'
+                        ).value,
+                        templateId: template._id,
+                        scheduledAt: scheduledAt.toISOString(),
+                    }
+                    if (templateWorkbookInput.files[0]) {
+                        payload.recipients = await readTemplateWorkbook(
+                            templateWorkbookInput.files[0],
+                            template
+                        )
+                    } else if (!editingTemplateScheduleId) {
+                        throw new Error('Excel recipient file select karein.')
+                    }
+                    const response = await fetch(
+                        editingTemplateScheduleId
+                            ? `/manager/template-scheduled-messages/${encodeURIComponent(
+                                  editingTemplateScheduleId
+                              )}`
+                            : '/manager/template-scheduled-messages',
+                        {
+                            method: editingTemplateScheduleId ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload),
+                        }
+                    )
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message ||
+                                'Template schedule save nahi ho saka.'
+                        )
+                    showNotice(
+                        'success',
+                        editingTemplateScheduleId
+                            ? 'Template schedule update ho gaya.'
+                            : 'Template messages schedule ho gaye.'
+                    )
+                    resetTemplateScheduleForm()
+                    await loadTemplateSchedules()
+                } catch (error) {
+                    showNotice('error', error.message)
+                } finally {
+                    submit.disabled = false
+                }
+            })
+
+            async function editTemplateSchedule(id) {
+                try {
+                    const response = await fetch(
+                        `/manager/template-scheduled-messages/${encodeURIComponent(
+                            id
+                        )}`
+                    )
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message ||
+                                'Template schedule load nahi ho saka.'
+                        )
+                    const campaign = result.data
+                    if (
+                        campaign.status !== 'scheduled' ||
+                        new Date(campaign.scheduledAt) <= new Date()
+                    ) {
+                        throw new Error(
+                            'Sirf future template schedules edit kiye ja sakte hain.'
+                        )
+                    }
+                    if (!templatesById.has(String(campaign.templateId))) {
+                        throw new Error(
+                            'Is schedule ka template ab available nahi hai. Pehle ek naya template banayein.'
+                        )
+                    }
+                    editingTemplateScheduleId = campaign._id
+                    document.getElementById('templateScheduleInstance').value =
+                        campaign.tokenId
+                    templateSelector.value = String(campaign.templateId)
+                    document.getElementById('templateScheduleAt').value =
+                        new Date(
+                            new Date(campaign.scheduledAt).getTime() -
+                                new Date().getTimezoneOffset() * 60000
+                        )
+                            .toISOString()
+                            .slice(0, 16)
+                    templateWorkbookInput.value = ''
+                    templateWorkbookInput.required = false
+                    document.getElementById('spreadsheetStatus').textContent =
+                        'Excel optional hai. Nayi file choose karein to recipient data update hoga; warna purana JSON data rahega.'
+                    document.getElementById('templateScheduleTitle').innerHTML =
+                        '<i class="fa-solid fa-pen-to-square text-primary me-2"></i>Edit Template Schedule'
+                    document.getElementById(
+                        'templateScheduleSubmit'
+                    ).innerHTML =
+                        '<i class="fa-solid fa-floppy-disk me-1"></i> Save changes'
+                    document
+                        .getElementById('cancelTemplateScheduleEdit')
+                        .classList.remove('d-none')
+                    updateTemplatePreview()
+                    templateScheduleForm.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                    })
+                } catch (error) {
+                    showNotice('error', error.message)
+                }
+            }
+
+            async function deleteTemplateSchedule(id) {
+                if (
+                    !confirm(
+                        'Is template schedule ko delete karein? Sending shuru ho chuki ho toh delete nahi hoga.'
+                    )
+                )
+                    return
+                try {
+                    const response = await fetch(
+                        `/manager/template-scheduled-messages/${encodeURIComponent(
+                            id
+                        )}`,
+                        { method: 'DELETE' }
+                    )
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message ||
+                                'Template schedule delete nahi ho saka.'
+                        )
+                    showNotice('success', result.message)
+                    if (editingTemplateScheduleId === id)
+                        resetTemplateScheduleForm()
+                    await loadTemplateSchedules()
+                } catch (error) {
+                    showNotice('error', error.message)
+                }
+            }
+
+            async function loadTemplateSchedules() {
+                const body = document.getElementById(
+                    'templateScheduleTableBody'
+                )
+                try {
+                    const response = await fetch(
+                        '/manager/template-scheduled-messages'
+                    )
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message ||
+                                'Template schedules load nahi ho sake.'
+                        )
+                    body.replaceChildren()
+                    if (!result.data.length) {
+                        const row = body.insertRow()
+                        const cell = row.insertCell()
+                        cell.colSpan = 6
+                        cell.className = 'text-center text-muted py-3'
+                        cell.textContent =
+                            'Abhi koi template schedule nahi hai.'
+                        return
+                    }
+                    for (const campaign of result.data) {
+                        const row = body.insertRow()
+                        addCell(
+                            row,
+                            new Date(campaign.scheduledAt).toLocaleString()
+                        )
+                        addCell(row, campaign.templateName || 'Template')
+                        addCell(row, campaign.tokenId, 'text-break')
+                        addCell(
+                            row,
+                            `${campaign.counts.sent} sent / ${campaign.counts.failed} failed / ${campaign.counts.pending} pending`
+                        )
+                        const statusCell = row.insertCell()
+                        statusCell.append(statusBadge(campaign.status))
+                        const actions = row.insertCell()
+                        actions.className = 'text-nowrap'
+                        const detailsButton = document.createElement('button')
+                        detailsButton.type = 'button'
+                        detailsButton.className =
+                            'btn btn-outline-primary btn-sm rounded-pill me-1'
+                        detailsButton.textContent = 'Details'
+                        detailsButton.addEventListener('click', () =>
+                            showAnalytics(
+                                campaign._id,
+                                '/manager/template-scheduled-messages'
+                            )
+                        )
+                        actions.append(detailsButton)
+                        if (campaign.status === 'scheduled') {
+                            const editButton = document.createElement('button')
+                            editButton.type = 'button'
+                            editButton.className =
+                                'btn btn-outline-secondary btn-sm rounded-pill me-1'
+                            editButton.textContent = 'Edit'
+                            editButton.addEventListener('click', () =>
+                                editTemplateSchedule(campaign._id)
+                            )
+                            actions.append(editButton)
+                        }
+                        if (campaign.status !== 'processing') {
+                            const deleteButton =
+                                document.createElement('button')
+                            deleteButton.type = 'button'
+                            deleteButton.className =
+                                'btn btn-outline-danger btn-sm rounded-pill'
+                            deleteButton.textContent = 'Delete'
+                            deleteButton.addEventListener('click', () =>
+                                deleteTemplateSchedule(campaign._id)
+                            )
+                            actions.append(deleteButton)
+                        }
+                    }
+                } catch (error) {
+                    body.replaceChildren()
+                    const row = body.insertRow()
+                    const cell = row.insertCell()
+                    cell.colSpan = 6
+                    cell.className = 'text-center text-danger py-3'
+                    cell.textContent = error.message
+                }
+            }
+
+            document
+                .getElementById('refreshTemplateSchedules')
+                .addEventListener('click', loadTemplateSchedules)
+            }
+
+            scheduleForm.addEventListener('submit', async (event) => {
+                event.preventDefault()
+                const button = document.getElementById('scheduleSubmit')
+                button.disabled = true
+                button.innerHTML =
+                    '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Scheduling...'
+                try {
+                    const scheduledAt = new Date(
+                        document.getElementById('scheduleAt').value
+                    )
+                    const payload = {
+                        tokenId:
+                            document.getElementById('scheduleInstance').value,
+                        numbers:
+                            document.getElementById('scheduleNumbers').value,
+                        type: scheduleType.value,
+                        scheduledAt: scheduledAt.toISOString(),
+                        message:
+                            document.getElementById('scheduleMessage').value,
+                        url: document.getElementById('scheduleUrl').value,
+                        caption:
+                            document.getElementById('scheduleCaption').value,
+                    }
+                    const response = await fetch(
+                        editingCampaignId
+                            ? `/manager/scheduled-messages/${encodeURIComponent(
+                                  editingCampaignId
+                              )}`
+                            : '/manager/scheduled-messages',
+                        {
+                            method: editingCampaignId ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload),
+                        }
+                    )
+                    const result = await response.json()
+                    if (!response.ok || result.error)
+                        throw new Error(
+                            result.message || 'Message schedule nahi ho saka.'
+                        )
+                    showNotice(
+                        'success',
+                        editingCampaignId
+                            ? 'Schedule update ho gaya.'
+                            : 'Message schedule ho gaya.'
+                    )
+                    scheduleForm.reset()
+                    setEditingState(null)
+                    updateScheduleFields()
+                    await loadCampaigns()
+                } catch (error) {
+                    showNotice(
+                        'error',
+                        error.message ||
+                            'Date/time select karein aur valid schedule details enter karein.'
+                    )
+                } finally {
+                    button.disabled = false
+                    button.innerHTML = editingCampaignId
+                        ? '<i class="fa-solid fa-floppy-disk me-1"></i> Save changes'
+                        : '<i class="fa-solid fa-calendar-check me-1"></i> Schedule message'
+                }
+            })
+
+            document.addEventListener('DOMContentLoaded', () => {
+                loadPlanLimits().catch((error) => {
+                    const notice = document.getElementById('planLimitsNotice')
+                    notice.className = 'alert alert-danger py-2'
+                    notice.textContent = error.message
+                })
+                const localNow = new Date(
+                    Date.now() - new Date().getTimezoneOffset() * 60000
+                )
+                document.getElementById('scheduleAt').min = localNow
+                    .toISOString()
+                    .slice(0, 16)
+                loadCampaigns()
+                setInterval(loadCampaigns, 15000)
+            })
+        </script>
+    </body>
+</html>

@@ -6,10 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
 
-  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css"> -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
   <style>
     .profile-img {
       width: 50px;
@@ -22,59 +27,48 @@
 
 </head>
 
-<body>
-
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#">
-        <img src="/img/logo.png" alt="Logo" width="30" height="30" class="me-2">
-        AK Automation
+<body class="user-layout">
+  <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/manager/dashboard">
+        <span class="d-inline-flex align-items-center justify-content-center" style="width:38px;height:38px;border-radius:10px;background:#fff;color:var(--gold-dark);font-weight:800;">AK</span>
+        <span>AK Automations</span>
       </a>
-      <p class="text-light m-0 ms-3">Hi, <%= user.username %>
-      </p>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="/manager/dashboard">Dashboard</a></li>
-          <li class="nav-item"><a class="nav-link" href="/manager/settings">Settings</a></li>
-          <li class="nav-item"><a class="nav-link" href="/manager/reports">Reports</a></li>
-          <li class="nav-item"><a class="nav-link" href="/manager/helps">Help</a></li>
-          <li class="nav-item"><a class="nav-link text-danger" href="/manager/logout">Logout</a></li>
-        </ul>
+      <div class="d-flex align-items-center gap-3 ms-auto">
+        <span class="text-white-50 small d-none d-md-inline">Welcome, <strong><%= user.username %></strong></span>
+        <a class="btn btn-light btn-sm rounded-pill px-3 d-none d-md-inline-flex" href="/manager/logout"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</a>
+        <button class="navbar-toggler d-lg-none" type="button" id="userSidebarToggle" aria-label="Open navigation menu" aria-controls="userSidebar" aria-expanded="false">
+          <i class="fa-solid fa-bars text-white"></i>
+        </button>
       </div>
     </div>
   </nav>
 
-  <div class="container-fluid">
-    <div class="row">
-      <nav class="col-md-3 col-lg-2 d-md-block sidebar">
-        <div class="position-sticky pt-3">
-          <ul class="nav flex-column">
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/home' ? 'active' : '' %>" href="/manager/dashboard">Dashboard</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/settings' ? 'active' : '' %>" href="/manager/settings">Settings</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/reports' ? 'active' : '' %>" href="/manager/reports">Reports</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/helps' ? 'active' : '' %>" href="/manager/helps">Help</a>
-            </li>
-          </ul>
+  <div class="user-sidebar-overlay" id="userSidebarOverlay"></div>
+  <div class="container-fluid user-app">
+    <div class="row gx-0">
+      <nav class="col-md-3 col-lg-2 sidebar" id="userSidebar" aria-label="Main navigation">
+        <div class="position-sticky pt-4 px-3">
+          <div class="text-center mb-4 pb-3 border-bottom">
+            <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-2" style="width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#fff;font-weight:800;font-size:1.25rem;">AK</div>
+            <h6 class="mb-0 fw-bold text-uppercase small">User Panel</h6>
+          </div>
+          <%- include('partials/sidebar-navigation', { activePage: 'settings' }) %>
         </div>
       </nav>
 
-      <main class="col-md-16 ms-sm-auto col-lg-10 px-md-4">
+      <main class="col-md-9 col-lg-10 px-3 px-md-4">
         <div class="d-flex justify-content-between flex-wrap align-items-center py-3 mb-4 border-bottom">
           <h1 class="text-center">Instance Management</h1>
         </div>
+        <% if (user.planStatus === 'Expired' && !user.role.includes('admin')) { %>
+          <div class="alert alert-danger" role="alert">
+            <strong>Plan expired.</strong> Existing WhatsApp instances are disconnected. Renew your plan before creating or reconnecting an instance.
+          </div>
+        <% } %>
         <div class="main-content">
           <div class="container mt-5">
-            <button class="btn btn-primary mt-4" data-bs-toggle="modal" data-bs-target="#instanceModal">Create
+            <button class="btn btn-primary mt-4" data-bs-toggle="modal" data-bs-target="#instanceModal" <%= user.planStatus === 'Expired' && !user.role.includes('admin') ? 'disabled' : '' %>>Create
               Instance</button>
             <button id="listInstance" class="btn btn-primary mb-3">List Instances</button>
           </div>
@@ -435,6 +429,38 @@
             </div>
           </div>
 
+          <!-- Pairing Code Modal -->
+          <div class="modal fade" id="pairingCodeModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content border-0 rounded-4 shadow">
+                <div class="modal-header border-0 pb-0">
+                  <h5 class="modal-title fw-bold text-success"><i class="fa-solid fa-mobile-screen-button me-2"></i>Login via Phone Number</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-4">
+                  <p class="text-muted small">Bina camera scan kiye WhatsApp par 8-digit code se login karein:</p>
+                  <input type="hidden" id="pairingInstanceKey">
+                  
+                  <div class="mb-3">
+                    <label class="form-label fw-bold">WhatsApp Number (with Country Code):</label>
+                    <input type="text" id="pairingPhoneNumber" class="form-control form-control-lg rounded-3" placeholder="e.g. 919876543210">
+                    <small class="text-muted">India ke liye 91 shuru me zaroor lagayein.</small>
+                  </div>
+
+                  <div class="text-center py-3 d-none" id="pairingCodeResultBox">
+                    <span class="text-muted small">Aapka 8-Digit Pairing Code:</span>
+                    <h2 class="fw-bold letter-spacing-2 text-primary my-2" id="displayPairingCode">---- ----</h2>
+                    <small class="text-success"><i class="fa-solid fa-circle-check me-1"></i> Phone par WhatsApp notification check karein aur ye code enter karein!</small>
+                  </div>
+
+                  <button class="btn btn-success w-100 fw-bold py-2 rounded-pill mt-2" id="btnRequestPairingCode" onclick="requestPairingCodeAction()">
+                    <i class="fa-solid fa-key me-1"></i> Get Pairing Code
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <script>
             // Toggle Webhook Options
             document.getElementById('webhook').addEventListener('change', function () {
@@ -505,7 +531,7 @@
               document.getElementById('instanceForm').reset();
               document.getElementById('webhookOptions').style.display = 'none';
             }
-            window.load = listdata();
+            document.addEventListener('DOMContentLoaded', listdata);
 
 
             async function listdata() {
@@ -563,7 +589,8 @@
                                 ${item.phone_connected ? `
                                     <button class="btn btn-outline-dark mb-2" onclick="sendMessage('${item.instance_key}')"><i class="fas fa-paper-plane"></i> Send Message</button>
                                     <button class="btn btn-outline-dark mb-2" onclick="disconnect('${item.instance_key}')"><i class="fas fa-power-off"></i> Disconnect</button>` : `
-                                    <button class="btn btn-outline-dark mb-2" onclick="connectAppliance('${item.instance_key}')"><i class="fas fa-qrcode"></i> Connect</button>`}
+                                    <button class="btn btn-success btn-sm mb-2 px-3 fw-bold" onclick="connectAppliance('${item.instance_key}')"><i class="fas fa-qrcode me-1"></i> Reconnect (QR Scan)</button>
+                                    <button class="btn btn-outline-success btn-sm mb-2 px-3 fw-bold" onclick="openPairingCodeModal('${item.instance_key}')"><i class="fas fa-mobile-screen-button me-1"></i> Reconnect (Phone Code)</button>`}
                             </div>
                         </div>
                     </div>`;
@@ -909,9 +936,48 @@
             }
 
 
+            function openPairingCodeModal(key) {
+              document.getElementById('pairingInstanceKey').value = key;
+              document.getElementById('pairingCodeResultBox').classList.add('d-none');
+              document.getElementById('displayPairingCode').innerText = '---- ----';
+              document.getElementById('pairingPhoneNumber').value = '';
+              new bootstrap.Modal(document.getElementById('pairingCodeModal')).show();
+            }
+
+            async function requestPairingCodeAction() {
+              const key = document.getElementById('pairingInstanceKey').value;
+              const number = document.getElementById('pairingPhoneNumber').value.trim();
+              if (!number) return alert('Kripya phone number country code ke sath daalein!');
+
+              const btn = document.getElementById('btnRequestPairingCode');
+              btn.disabled = true;
+              btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Requesting...';
+
+              try {
+                const res = await fetch(`/instance/getcode?key=${key}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ number: number })
+                });
+                const data = await res.json();
+
+                if (data.error) {
+                  alert(data.message || 'Pairing code request fail ho gaya');
+                } else {
+                  document.getElementById('displayPairingCode').innerText = data.code || data.pairingCode || 'Generated';
+                  document.getElementById('pairingCodeResultBox').classList.remove('d-none');
+                }
+              } catch (err) {
+                alert('Server error: ' + err.message);
+              } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-key me-1"></i> Get Pairing Code';
+              }
+            }
           </script>
 
         </div>
+        <%- include('partials/footer') %>
       </main>
     </div>
   </div>
@@ -920,6 +986,7 @@
 
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/user-navigation.js"></script>
 </body>
 
 </html>

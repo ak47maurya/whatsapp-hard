@@ -1,0 +1,47 @@
+<ul class="nav flex-column">
+    <li class="nav-item">
+        <a class="nav-link <%= activePage === 'dashboard' ? 'active' : '' %>" href="/manager/dashboard" <% if (activePage === 'dashboard') { %>aria-current="page"<% } %>>
+            <i class="fa-solid fa-gauge-high me-2"></i><span>Dashboard</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= activePage === 'settings' ? 'active' : '' %>" href="/manager/settings" <% if (activePage === 'settings') { %>aria-current="page"<% } %>>
+            <i class="fa-solid fa-gear me-2"></i><span>Device Settings</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= activePage === 'reports' ? 'active' : '' %>" href="/manager/reports" <% if (activePage === 'reports') { %>aria-current="page"<% } %>>
+            <i class="fa-solid fa-chart-line me-2"></i><span>Reports</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= activePage === 'schedule' ? 'active' : '' %>" href="/manager/schedule" <% if (activePage === 'schedule') { %>aria-current="page"<% } %>>
+            <i class="fa-solid fa-calendar-days me-2"></i><span>Scheduled Messages</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= activePage === 'templateschedule' ? 'active' : '' %>" href="/manager/templateschedule" <% if (activePage === 'templateschedule') { %>aria-current="page"<% } %>>
+            <i class="fa-solid fa-file-excel me-2"></i><span>Template Scheduler</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= activePage === 'groups' ? 'active' : '' %>" href="/manager/groups" <% if (activePage === 'groups') { %>aria-current="page"<% } %>>
+            <i class="fa-solid fa-users me-2"></i><span>WhatsApp Groups</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= activePage === 'number-checker' ? 'active' : '' %>" href="/manager/number-checker" <% if (activePage === 'number-checker') { %>aria-current="page"<% } %>>
+            <i class="fa-solid fa-user-check me-2"></i><span>WhatsApp Number Check</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= activePage === 'helps' ? 'active' : '' %>" href="/manager/helps" <% if (activePage === 'helps') { %>aria-current="page"<% } %>>
+            <i class="fa-solid fa-circle-question me-2"></i><span>Help</span>
+        </a>
+    </li>
+    <li class="nav-item mt-3">
+        <a class="nav-link text-danger" href="/manager/logout">
+            <i class="fa-solid fa-right-from-bracket me-2"></i><span>Logout</span>
+        </a>
+    </li>
+</ul>

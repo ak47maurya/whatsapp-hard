@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Template Scheduler — AK Automations</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+        <link rel="stylesheet" href="/css/styles.css" />
+    </head>
+    <body class="user-layout">
+        <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand d-flex align-items-center gap-2" href="/manager/dashboard">
+                    <span class="d-inline-flex align-items-center justify-content-center" style="width:38px;height:38px;border-radius:10px;background:#fff;color:var(--gold-dark);font-weight:800;">AK</span>
+                    <span>AK Automations</span>
+                </a>
+                <div class="d-flex align-items-center gap-3 ms-auto">
+                    <span class="text-white-50 small d-none d-md-inline">Welcome, <strong><%= user.username %></strong></span>
+                    <a class="btn btn-light btn-sm rounded-pill px-3 d-none d-md-inline-flex" href="/manager/logout"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</a>
+                    <button class="navbar-toggler d-lg-none" type="button" id="userSidebarToggle" aria-label="Open navigation menu" aria-controls="userSidebar" aria-expanded="false">
+                        <i class="fa-solid fa-bars text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="user-sidebar-overlay" id="userSidebarOverlay"></div>
+        <div class="container-fluid user-app">
+            <div class="row gx-0">
+                <nav class="col-md-3 col-lg-2 sidebar" id="userSidebar" aria-label="Main navigation">
+                    <div class="position-sticky pt-4 px-3">
+                        <div class="text-center mb-4 pb-3 border-bottom">
+                            <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-2" style="width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#fff;font-weight:800;font-size:1.25rem;">AK</div>
+                            <h6 class="mb-0 fw-bold text-uppercase small">User Panel</h6>
+                        </div>
+                        <%- include('partials/sidebar-navigation', { activePage: 'templateschedule' }) %>
+                    </div>
+                </nav>
+
+                <main class="col-md-9 col-lg-10 px-3 px-md-4 py-4">
+                    <div class="d-flex justify-content-between flex-wrap align-items-center pb-2 mb-4 border-bottom">
+                        <div>
+                            <h2 class="fw-bold text-dark mb-1">Template Scheduler</h2>
+                            <small class="text-muted">Text, image ya document message ko variable ke saath Excel recipients ke liye schedule karein.</small>
+                        </div>
+                        <a class="btn btn-outline-success rounded-pill mt-2 mt-md-0" href="/manager/schedule"><i class="fa-solid fa-calendar-days me-1"></i> Regular Scheduler</a>
+                    </div>
+                    <div class="alert alert-info py-2" id="planLimitsNotice">Plan limits load ho rahe hain...</div>
+
+                    <% if (user.planStatus === 'Expired' && !user.role.includes('admin')) { %>
+                        <div class="alert alert-danger">Aapka plan expire ho gaya hai. Schedule create ya send karne se pehle plan renew karein.</div>
+                    <% } %>
+
+                    <section class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-3 p-md-4">
+                            <h4 class="fw-bold mb-1"><i class="fa-solid fa-file-lines text-success me-2"></i>Message Templates</h4>
+                            <p class="text-muted">Text message ya image/document ke URL aur caption ke saath template banayein. Caption aur message mein <code>{{name}}</code> jaise variables use kar sakte hain.</p>
+                            <form id="templateForm" class="border rounded-3 p-3 mb-4">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="templateName" class="form-label fw-semibold">Template name</label>
+                                        <input class="form-control" id="templateName" maxlength="100" required placeholder="Order update">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="templateType" class="form-label fw-semibold">Message type</label>
+                                        <select class="form-select" id="templateType">
+                                            <option value="text">Text message</option>
+                                            <option value="image">Image with caption</option>
+                                            <option value="document">Document with caption</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12" id="templateBodyField">
+                                        <label for="templateBody" class="form-label fw-semibold">Message</label>
+                                        <textarea class="form-control" id="templateBody" rows="3" maxlength="4000" placeholder="Hello {{name}}, your order {{order_id}} is ready."></textarea>
+                                    </div>
+                                    <div class="col-md-8 d-none" id="templateUrlField">
+                                        <label for="templateUrl" class="form-label fw-semibold">Image / document URL</label>
+                                        <input class="form-control" id="templateUrl" type="url" placeholder="https://example.com/file.jpg">
+                                        <div class="form-text">Publicly accessible HTTP/HTTPS URL dein. File is URL se send hoga.</div>
+                                    </div>
+                                    <div class="col-12 d-none" id="templateCaptionField">
+                                        <label for="templateCaption" class="form-label fw-semibold">Caption (optional)</label>
+                                        <textarea class="form-control" id="templateCaption" rows="2" maxlength="1000" placeholder="Hello {{name}}, see your order details."></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <button class="btn btn-success rounded-pill px-4" id="templateSubmit" type="submit">Save template</button>
+                                        <button class="btn btn-outline-secondary rounded-pill px-4 d-none" id="cancelTemplateEdit" type="button">Cancel edit</button>
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead><tr><th>Template</th><th>Type</th><th>Excel columns</th><th>Actions</th></tr></thead>
+                                    <tbody id="templateTableBody"><tr><td colspan="4" class="text-center text-muted py-3">Templates load ho rahe hain...</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-3 p-md-4">
+                            <h4 class="fw-bold mb-1" id="templateScheduleTitle"><i class="fa-solid fa-calendar-plus text-success me-2"></i>Schedule a template</h4>
+                            <p class="text-muted">Excel template browser mein export/read hoti hai. Server ko recipients JSON ke roop mein bheje jaate hain.</p>
+                            <form id="templateScheduleForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="templateScheduleInstance" class="form-label fw-semibold">WhatsApp instance</label>
+                                        <select class="form-select" id="templateScheduleInstance" required>
+                                            <option value="">Instance select karein</option>
+                                            <% (user.insdetails || []).forEach(instance => { %><option value="<%= instance.Token_Id %>"><%= instance.Token_Id %></option><% }) %>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="scheduleTemplate" class="form-label fw-semibold">Message template</label>
+                                        <select class="form-select" id="scheduleTemplate" required><option value="">Pehle template banayein ya select karein</option></select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="templateScheduleAt" class="form-label fw-semibold">Send date &amp; time</label>
+                                        <input class="form-control" id="templateScheduleAt" type="datetime-local" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="templateSpreadsheet" class="form-label fw-semibold">Excel recipient file (.xlsx)</label>
+                                        <input class="form-control" id="templateSpreadsheet" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                                        <div class="form-text">Per template Export Excel use karein. Mobile aur har variable column bharein. Maximum 500 opted-in contacts.</div>
+                                        <div class="form-text" id="spreadsheetStatus" aria-live="polite"></div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="alert alert-light border mb-0" id="templatePreview">Template select karne par preview aur Excel columns yahan dikhenge.</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <button class="btn btn-success rounded-pill px-4" id="templateScheduleSubmit" type="submit"><i class="fa-solid fa-calendar-check me-1"></i> Schedule template messages</button>
+                                        <button class="btn btn-outline-secondary rounded-pill px-4 d-none" id="cancelTemplateScheduleEdit" type="button">Cancel edit</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+
+                    <section class="card border-0 shadow-sm rounded-4">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="fw-bold mb-0">Template schedules</h4>
+                                <button class="btn btn-outline-success btn-sm rounded-pill" type="button" id="refreshTemplateSchedules">Refresh</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead><tr><th>Scheduled time</th><th>Template</th><th>Type</th><th>Instance</th><th>Recipients</th><th>Status</th><th>Actions</th></tr></thead>
+                                    <tbody id="templateScheduleTableBody"><tr><td colspan="7" class="text-center text-muted py-3">Template schedules load ho rahe hain...</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                    <%- include('partials/footer') %>
+                </main>
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+        <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+        <script src="/js/user-navigation.js"></script>
+        <script>
+            const templateForm = document.getElementById('templateForm');
+            const templateType = document.getElementById('templateType');
+            const templateScheduleForm = document.getElementById('templateScheduleForm');
+            const templateSelector = document.getElementById('scheduleTemplate');
+            const templateWorkbookInput = document.getElementById('templateSpreadsheet');
+            const templateStateClasses = { scheduled: 'bg-primary', processing: 'bg-info text-dark', completed: 'bg-success', partial: 'bg-warning text-dark', failed: 'bg-danger', cancelled: 'bg-secondary' };
+            let templatesById = new Map();
+            let editingTemplateId = null;
+            let editingTemplateScheduleId = null;
+            let maxRecipientsPerCampaign = 500;
+
+            function showNotice(type, message) {
+                if (window.toastr && typeof window.toastr[type] === 'function') window.toastr[type](message);
+                else window.alert(message);
+            }
+
+            async function loadPlanLimits() {
+                const response = await fetch('/manager/plan-summary');
+                const result = await response.json();
+                if (!response.ok || result.error) throw new Error(result.message || 'Plan limits load nahi ho sake.');
+                const plan = result.data;
+                maxRecipientsPerCampaign = plan.dailyMessageLimit
+                    ? Math.min(plan.maxRecipientsPerCampaign, plan.dailyMessageLimit)
+                    : plan.maxRecipientsPerCampaign;
+                const contacts = plan.maxUniqueRecipients < 0
+                    ? 'unlimited contacts'
+                    : `${plan.uniqueRecipientsUsed}/${plan.maxUniqueRecipients} unique contacts used for this plan`;
+                const messages = plan.dailyMessageLimit
+                    ? `${plan.dailyMessagesSent + plan.dailyMessagesReserved}/${plan.dailyMessageLimit} messages used today`
+                    : 'no daily message cap';
+                document.getElementById('planLimitsNotice').textContent =
+                    `${plan.name}: up to ${maxRecipientsPerCampaign} recipients per campaign; ${messages}; ${contacts}.`;
+            }
+
+            function addCell(row, value, className = '') {
+                const cell = document.createElement('td');
+                cell.className = className;
+                cell.textContent = value;
+                row.append(cell);
+                return cell;
+            }
+
+            function statusBadge(status) {
+                const badge = document.createElement('span');
+                badge.className = `badge ${templateStateClasses[status] || 'bg-secondary'}`;
+                badge.textContent = status;
+                return badge;
+            }
+
+            function updateTemplateFields() {
+                const isText = templateType.value === 'text';
+                document.getElementById('templateBodyField').classList.toggle('d-none', !isText);
+                document.getElementById('templateUrlField').classList.toggle('d-none', isText);
+                document.getElementById('templateCaptionField').classList.toggle('d-none', isText);
+                document.getElementById('templateBody').required = isText;
+                document.getElementById('templateUrl').required = !isText;
+            }
+            templateType.addEventListener('change', updateTemplateFields);
+            updateTemplateFields();
+
+            function setTemplateScheduleType(template) {
+                const typeLabel = template.type === 'text' ? 'Text' : template.type === 'image' ? 'Image' : 'Document';
+                return typeLabel;
+            }
+
+            function resetTemplateForm() {
+                editingTemplateId = null;
+                templateForm.reset();
+                document.getElementById('templateSubmit').textContent = 'Save template';
+                document.getElementById('cancelTemplateEdit').classList.add('d-none');
+                updateTemplateFields();
+            }
+
+            function resetTemplateScheduleForm() {
+                editingTemplateScheduleId = null;
+                templateScheduleForm.reset();
+                templateWorkbookInput.required = true;
+                document.getElementById('templateScheduleTitle').innerHTML = '<i class="fa-solid fa-calendar-plus text-success me-2"></i>Schedule a template';
+                document.getElementById('templateScheduleSubmit').innerHTML = '<i class="fa-solid fa-calendar-check me-1"></i> Schedule template messages';
+                document.getElementById('cancelTemplateScheduleEdit').classList.add('d-none');
+                document.getElementById('spreadsheetStatus').textContent = '';
+                updateTemplatePreview();
+            }
+
+            function updateTemplatePreview() {
+                const template = templatesById.get(templateSelector.value);
+                const preview = document.getElementById('templatePreview');
+                if (!template) {
+                    preview.textContent = 'Template select karne par preview aur Excel columns yahan dikhenge.';
+                    return;
+                }
+                preview.replaceChildren();
+                const heading = document.createElement('strong');
+                heading.textContent = `${template.name} · ${setTemplateScheduleType(template)} · Excel columns: mobile${template.variables.length ? `, ${template.variables.join(', ')}` : ''}`;
+                const content = document.createElement('div');
+                content.className = 'mt-2';
+                content.textContent = template.type === 'text' ? template.body : `${template.url}${template.caption ? ` — ${template.caption}` : ''}`;
+                preview.append(heading, content);
+            }
+
+            function exportTemplateWorkbook(template) {
+                if (!window.XLSX) {
+                    showNotice('error', 'Excel library load nahi hui. Page reload karke dobara try karein.');
+                    return;
+                }
+                const headers = ['mobile', ...template.variables];
+                const sheet = XLSX.utils.aoa_to_sheet([headers]);
+                sheet['!cols'] = headers.map(header => ({ wch: Math.max(18, header.length + 4) }));
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, sheet, 'Recipients');
+                const safeName = template.name.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-|-$/g, '') || 'template';
+                XLSX.writeFile(workbook, `${safeName}-recipients.xlsx`);
+            }
+
+            async function readTemplateWorkbook(file, template) {
+                if (!window.XLSX) throw new Error('Excel library load nahi hui. Page reload karke dobara try karein.');
+                if (!file || !/\.xlsx$/i.test(file.name)) throw new Error('Valid .xlsx file select karein.');
+                if (file.size > 2 * 1024 * 1024) throw new Error('Excel file 2 MB se chhoti honi chahiye.');
+                let workbook;
+                try {
+                    workbook = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: false });
+                } catch {
+                    throw new Error('Excel file read nahi ho saki. Valid .xlsx workbook select karein.');
+                }
+                const sheetName = workbook.SheetNames[0];
+                if (!sheetName) throw new Error('Excel file mein worksheet nahi mili.');
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: '', raw: false });
+                if (!rows.length) throw new Error('Excel file mein header row nahi hai.');
+                const normalizeHeader = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                const headers = rows[0].map(normalizeHeader);
+                const usedHeaders = headers.filter(Boolean);
+                if (new Set(usedHeaders).size !== usedHeaders.length) throw new Error('Excel file mein duplicate headers hain.');
+                const mobileColumn = headers.findIndex(header => ['mobile', 'mobilenumber', 'phone', 'phonenumber', 'number', 'contactnumber'].includes(header));
+                if (mobileColumn < 0) throw new Error('Excel header mein mobile column nahi hai.');
+                const variableColumns = new Map();
+                for (const variable of template.variables) {
+                    const column = headers.indexOf(normalizeHeader(variable));
+                    if (column < 0) throw new Error(`Excel file mein "${variable}" column nahi mila.`);
+                    variableColumns.set(variable, column);
+                }
+                const dataRows = rows.slice(1).filter(row => row.some(value => String(value ?? '').trim()));
+                if (!dataRows.length || dataRows.length > maxRecipientsPerCampaign) throw new Error(`Excel file mein 1 se ${maxRecipientsPerCampaign} recipient rows honi chahiye.`);
+                const seen = new Set();
+                return dataRows.map((row, index) => {
+                    let rawNumber = row[mobileColumn];
+                    if (typeof rawNumber === 'number' && Number.isFinite(rawNumber)) {
+                        if (!Number.isSafeInteger(rawNumber)) throw new Error(`Row ${index + 2}: invalid mobile number.`);
+                        rawNumber = String(rawNumber);
+                    }
+                    if (!/^\+?[\d\s()-]+$/.test(String(rawNumber || ''))) throw new Error(`Row ${index + 2}: country code ke saath valid mobile number enter karein.`);
+                    const number = String(rawNumber).replace(/\D/g, '');
+                    if (number.length < 7 || number.length > 15) throw new Error(`Row ${index + 2}: valid mobile number enter karein.`);
+                    if (seen.has(number)) throw new Error(`Row ${index + 2}: duplicate mobile number.`);
+                    seen.add(number);
+                    const variables = {};
+                    for (const [variable, column] of variableColumns) {
+                        const value = String(row[column] ?? '').trim();
+                        if (!value) throw new Error(`Row ${index + 2}: "${variable}" blank nahi ho sakta.`);
+                        variables[variable] = value;
+                    }
+                    const source = template.type === 'text' ? template.body : template.caption;
+                    const rendered = source.replace(/{{\s*([A-Za-z][A-Za-z0-9_]*)\s*}}/g, (_, key) => variables[key] || '');
+                    if (rendered.length > (template.type === 'text' ? 4000 : 1000)) throw new Error(`Row ${index + 2}: rendered message/caption bahut lamba hai.`);
+                    return { number, variables };
+                });
+            }
+
+            async function loadTemplates(selectedId = templateSelector.value) {
+                const body = document.getElementById('templateTableBody');
+                try {
+                    const response = await fetch('/manager/message-templates');
+                    const result = await response.json();
+                    if (!response.ok || result.error) throw new Error(result.message || 'Templates load nahi ho sake.');
+                    templatesById = new Map(result.data.map(template => [String(template._id), template]));
+                    templateSelector.replaceChildren();
+                    const placeholder = document.createElement('option');
+                    placeholder.value = '';
+                    placeholder.textContent = templatesById.size ? 'Template select karein' : 'Pehle template banayein';
+                    templateSelector.append(placeholder);
+                    for (const template of result.data) {
+                        const option = document.createElement('option');
+                        option.value = template._id;
+                        option.textContent = template.name;
+                        templateSelector.append(option);
+                    }
+                    if (selectedId && templatesById.has(String(selectedId))) templateSelector.value = selectedId;
+                    body.replaceChildren();
+                    if (!result.data.length) {
+                        const row = body.insertRow();
+                        const cell = row.insertCell();
+                        cell.colSpan = 4;
+                        cell.className = 'text-center text-muted py-3';
+                        cell.textContent = 'Abhi koi template nahi hai.';
+                    }
+                    for (const template of result.data) {
+                        const row = body.insertRow();
+                        addCell(row, template.name);
+                        addCell(row, setTemplateScheduleType(template));
+                        addCell(row, template.variables.length ? template.variables.join(', ') : 'No variables');
+                        const actions = row.insertCell();
+                        actions.className = 'text-nowrap';
+                        const exportButton = document.createElement('button');
+                        exportButton.type = 'button';
+                        exportButton.className = 'btn btn-outline-success btn-sm rounded-pill me-1';
+                        exportButton.textContent = 'Export Excel';
+                        exportButton.addEventListener('click', () => exportTemplateWorkbook(template));
+                        actions.append(exportButton);
+                        const editButton = document.createElement('button');
+                        editButton.type = 'button';
+                        editButton.className = 'btn btn-outline-secondary btn-sm rounded-pill me-1';
+                        editButton.textContent = 'Edit';
+                        editButton.addEventListener('click', () => {
+                            editingTemplateId = String(template._id);
+                            document.getElementById('templateName').value = template.name;
+                            templateType.value = template.type || 'text';
+                            document.getElementById('templateBody').value = template.body || '';
+                            document.getElementById('templateUrl').value = template.url || '';
+                            document.getElementById('templateCaption').value = template.caption || '';
+                            document.getElementById('templateSubmit').textContent = 'Save changes';
+                            document.getElementById('cancelTemplateEdit').classList.remove('d-none');
+                            updateTemplateFields();
+                            templateForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        });
+                        actions.append(editButton);
+                        const deleteButton = document.createElement('button');
+                        deleteButton.type = 'button';
+                        deleteButton.className = 'btn btn-outline-danger btn-sm rounded-pill';
+                        deleteButton.textContent = 'Delete';
+                        deleteButton.addEventListener('click', () => deleteTemplate(String(template._id)));
+                        actions.append(deleteButton);
+                    }
+                    updateTemplatePreview();
+                } catch (error) {
+                    body.replaceChildren();
+                    const row = body.insertRow();
+                    const cell = row.insertCell();
+                    cell.colSpan = 4;
+                    cell.className = 'text-center text-danger py-3';
+                    cell.textContent = error.message;
+                }
+            }
+
+            templateForm.addEventListener('submit', async event => {
+                event.preventDefault();
+                const type = templateType.value;
+                const payload = {
+                    name: document.getElementById('templateName').value,
+                    type,
+                    body: document.getElementById('templateBody').value,
+                    url: document.getElementById('templateUrl').value,
+                    caption: document.getElementById('templateCaption').value
+                };
+                try {
+                    const response = await fetch(editingTemplateId ? `/manager/message-templates/${encodeURIComponent(editingTemplateId)}` : '/manager/message-templates', {
+                        method: editingTemplateId ? 'PUT' : 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (!response.ok || result.error) throw new Error(result.message || 'Template save nahi ho saka.');
+                    showNotice('success', editingTemplateId ? 'Template update ho gaya.' : 'Template create ho gaya.');
+                    const id = String(result.data._id);
+                    resetTemplateForm();
+                    await loadTemplates(id);
+                } catch (error) {
+                    showNotice('error', error.message);
+                }
+            });
+
+            async function deleteTemplate(id) {
+                if (!confirm('Is message template ko delete karein?')) return;
+                try {
+                    const response = await fetch(`/manager/message-templates/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                    const result = await response.json();
+                    if (!response.ok || result.error) throw new Error(result.message || 'Template delete nahi ho saka.');
+                    showNotice('success', result.message);
+                    if (editingTemplateId === id) resetTemplateForm();
+                    await loadTemplates();
+                } catch (error) {
+                    showNotice('error', error.message);
+                }
+            }
+
+            templateSelector.addEventListener('change', updateTemplatePreview);
+            document.getElementById('cancelTemplateEdit').addEventListener('click', resetTemplateForm);
+            document.getElementById('cancelTemplateScheduleEdit').addEventListener('click', resetTemplateScheduleForm);
+            templateWorkbookInput.addEventListener('change', async () => {
+                const file = templateWorkbookInput.files[0];
+                const template = templatesById.get(templateSelector.value);
+                const status = document.getElementById('spreadsheetStatus');
+                if (!file || !template) {
+                    status.textContent = 'Template select karke Excel file choose karein.';
+                    return;
+                }
+                try {
+                    const recipients = await readTemplateWorkbook(file, template);
+                    status.textContent = `${recipients.length} recipients valid hain. Excel browser mein hi process hui.`;
+                } catch (error) {
+                    status.textContent = error.message;
+                }
+            });
+
+            templateScheduleForm.addEventListener('submit', async event => {
+                event.preventDefault();
+                const submit = document.getElementById('templateScheduleSubmit');
+                submit.disabled = true;
+                try {
+                    const template = templatesById.get(templateSelector.value);
+                    if (!template) throw new Error('Message template select karein.');
+                    const scheduledAt = new Date(document.getElementById('templateScheduleAt').value);
+                    if (!Number.isFinite(scheduledAt.getTime())) throw new Error('Valid send date aur time select karein.');
+                    const file = templateWorkbookInput.files[0];
+                    if (!file && !editingTemplateScheduleId) throw new Error('Excel recipient file select karein.');
+                    const payload = {
+                        tokenId: document.getElementById('templateScheduleInstance').value,
+                        templateId: template._id,
+                        scheduledAt: scheduledAt.toISOString()
+                    };
+                    if (file) payload.recipients = await readTemplateWorkbook(file, template);
+                    const response = await fetch(editingTemplateScheduleId ? `/manager/template-scheduled-messages/${encodeURIComponent(editingTemplateScheduleId)}` : '/manager/template-scheduled-messages', {
+                        method: editingTemplateScheduleId ? 'PUT' : 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (!response.ok || result.error) throw new Error(result.message || 'Template schedule save nahi ho saka.');
+                    showNotice('success', editingTemplateScheduleId ? 'Template schedule update ho gaya.' : 'Template messages schedule ho gaye.');
+                    resetTemplateScheduleForm();
+                    await loadTemplateSchedules();
+                } catch (error) {
+                    showNotice('error', error.message);
+                } finally {
+                    submit.disabled = false;
+                }
+            });
+
+            async function editTemplateSchedule(id) {
+                try {
+                    const response = await fetch(`/manager/template-scheduled-messages/${encodeURIComponent(id)}`);
+                    const result = await response.json();
+                    if (!response.ok || result.error) throw new Error(result.message || 'Schedule load nahi ho saka.');
+                    const campaign = result.data;
+                    if (campaign.status !== 'scheduled' || new Date(campaign.scheduledAt) <= new Date()) throw new Error('Sirf future schedule ko edit kar sakte hain.');
+                    if (!templatesById.has(String(campaign.templateId))) throw new Error('Is schedule ka template available nahi hai.');
+                    editingTemplateScheduleId = String(campaign._id);
+                    document.getElementById('templateScheduleInstance').value = campaign.tokenId;
+                    templateSelector.value = String(campaign.templateId);
+                    document.getElementById('templateScheduleAt').value = new Date(new Date(campaign.scheduledAt).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                    templateWorkbookInput.value = '';
+                    templateWorkbookInput.required = false;
+                    document.getElementById('templateScheduleTitle').innerHTML = '<i class="fa-solid fa-pen-to-square text-primary me-2"></i>Edit Template Schedule';
+                    document.getElementById('templateScheduleSubmit').innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i> Save changes';
+                    document.getElementById('cancelTemplateScheduleEdit').classList.remove('d-none');
+                    document.getElementById('spreadsheetStatus').textContent = 'Excel optional hai. Nayi file select karein to recipients replace honge.';
+                    updateTemplatePreview();
+                    templateScheduleForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } catch (error) {
+                    showNotice('error', error.message);
+                }
+            }
+
+            async function deleteTemplateSchedule(id) {
+                if (!confirm('Template schedule delete karein? Sending shuru ho chuki ho toh delete nahi hoga.')) return;
+                try {
+                    const response = await fetch(`/manager/template-scheduled-messages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                    const result = await response.json();
+                    if (!response.ok || result.error) throw new Error(result.message || 'Schedule delete nahi ho saka.');
+                    showNotice('success', result.message);
+                    if (editingTemplateScheduleId === id) resetTemplateScheduleForm();
+                    await loadTemplateSchedules();
+                } catch (error) {
+                    showNotice('error', error.message);
+                }
+            }
+
+            async function showTemplateScheduleDetails(id) {
+                try {
+                    const response = await fetch(`/manager/template-scheduled-messages/${encodeURIComponent(id)}`);
+                    const result = await response.json();
+                    if (!response.ok || result.error) throw new Error(result.message || 'Schedule details load nahi ho sake.');
+                    const campaign = result.data;
+                    const lines = campaign.recipients.map(recipient => `${recipient.number}: ${recipient.status}${recipient.failureReason ? ` — ${recipient.failureReason}` : ''}`).join('\n');
+                    showNotice('info', `${campaign.templateName} · ${campaign.type} · ${campaign.recipients.length} recipients\n${lines.slice(0, 1200)}`);
+                } catch (error) {
+                    showNotice('error', error.message);
+                }
+            }
+
+            async function loadTemplateSchedules() {
+                const body = document.getElementById('templateScheduleTableBody');
+                try {
+                    const response = await fetch('/manager/template-scheduled-messages');
+                    const result = await response.json();
+                    if (!response.ok || result.error) throw new Error(result.message || 'Schedules load nahi ho sake.');
+                    body.replaceChildren();
+                    if (!result.data.length) {
+                        const row = body.insertRow();
+                        const cell = row.insertCell();
+                        cell.colSpan = 7;
+                        cell.className = 'text-center text-muted py-3';
+                        cell.textContent = 'Abhi koi template schedule nahi hai.';
+                    }
+                    for (const campaign of result.data) {
+                        const row = body.insertRow();
+                        addCell(row, new Date(campaign.scheduledAt).toLocaleString());
+                        addCell(row, campaign.templateName || 'Template');
+                        addCell(row, setTemplateScheduleType({ type: campaign.type }));
+                        addCell(row, campaign.tokenId, 'text-break');
+                        addCell(row, `${campaign.counts.sent} sent / ${campaign.counts.failed} failed / ${campaign.counts.pending} pending`);
+                        const statusCell = row.insertCell();
+                        statusCell.append(statusBadge(campaign.status));
+                        const actions = row.insertCell();
+                        actions.className = 'text-nowrap';
+                        const details = document.createElement('button');
+                        details.type = 'button';
+                        details.className = 'btn btn-outline-primary btn-sm rounded-pill me-1';
+                        details.textContent = 'Details';
+                        details.addEventListener('click', () => showTemplateScheduleDetails(String(campaign._id)));
+                        actions.append(details);
+                        if (campaign.status === 'scheduled') {
+                            const edit = document.createElement('button');
+                            edit.type = 'button';
+                            edit.className = 'btn btn-outline-secondary btn-sm rounded-pill me-1';
+                            edit.textContent = 'Edit';
+                            edit.addEventListener('click', () => editTemplateSchedule(String(campaign._id)));
+                            actions.append(edit);
+                        }
+                        if (campaign.status !== 'processing') {
+                            const remove = document.createElement('button');
+                            remove.type = 'button';
+                            remove.className = 'btn btn-outline-danger btn-sm rounded-pill';
+                            remove.textContent = 'Delete';
+                            remove.addEventListener('click', () => deleteTemplateSchedule(String(campaign._id)));
+                            actions.append(remove);
+                        }
+                    }
+                } catch (error) {
+                    body.replaceChildren();
+                    const row = body.insertRow();
+                    const cell = row.insertCell();
+                    cell.colSpan = 7;
+                    cell.className = 'text-center text-danger py-3';
+                    cell.textContent = error.message;
+                }
+            }
+
+            document.getElementById('refreshTemplateSchedules').addEventListener('click', loadTemplateSchedules);
+            document.addEventListener('DOMContentLoaded', () => {
+                loadPlanLimits().catch(error => {
+                    document.getElementById('planLimitsNotice').className = 'alert alert-danger py-2';
+                    document.getElementById('planLimitsNotice').textContent = error.message;
+                });
+                const localNow = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+                document.getElementById('templateScheduleAt').min = localNow.toISOString().slice(0, 16);
+                loadTemplates();
+                loadTemplateSchedules();
+                setInterval(loadTemplateSchedules, 15000);
+            });
+        </script>
+    </body>
+</html>

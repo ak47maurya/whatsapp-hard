@@ -1,91 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
+  <title>Login — AK Automations</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-  body {
-    background-color: #12202b;
-    color: #66fcf1;
-    font-family: sans-serif;
-  }
+    :root {
+      --gold: #c9a227;
+      --gold-dark: #a9861d;
+      --gold-light: #e6c65c;
+      --gold-soft: #f7edd0;
+      --gold-bg: #fdfaf1;
+      --ink: #3a3222;
+      --ink-soft: #6b6353;
+      --line: #ecdfb8;
+    }
 
-  h1 {
-    font-size: 3rem;
-    font-weight: bold;
-    text-shadow: 0 0 10px #66fcf1, 0 0 20px #45a29e;
-  }
+    body {
+      background: radial-gradient(circle at 20% 0%, #f9f0d6 0%, var(--gold-bg) 55%);
+      color: var(--ink);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
 
-  .btn-custom {
-    background-color: #45a29e;
-    border: none;
-    color: #0b0c10;
-    font-weight: bold;
-    text-transform: uppercase;
-    box-shadow: 0 0 10px #66fcf1;
-    transition: all 0.3s ease;
-  }
+    .auth-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: 0 24px 60px rgba(201, 162, 39, 0.18);
+      padding: 40px;
+      width: 100%;
+      max-width: 440px;
+    }
 
-  .btn-custom:hover {
-    background-color: #66fcf1;
-    color: #0b0c10;
-    box-shadow: 0 0 20px #66fcf1;
-  }
+    .brand-logo {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.2rem;
+      box-shadow: 0 8px 20px rgba(201, 162, 39, 0.35);
+      margin: 0 auto 14px;
+    }
 
-  .rd {
-    font-family: ui-monospace;
-    border-radius: 1rem;
-    width: 60%;
-  }
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 4px;
+    }
 
-  .header {
-    padding: 10px;
-    text-align: center;
-  }
-</style>
+    .subtitle {
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: .95rem;
+      margin-bottom: 26px;
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: var(--ink);
+      font-size: .9rem;
+    }
+
+    .form-control {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fffdf7;
+      color: var(--ink);
+    }
+
+    .form-control:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 0.2rem rgba(201, 162, 39, 0.2);
+      background: #fff;
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      border-radius: 50px;
+      padding: 12px;
+      width: 100%;
+      box-shadow: 0 6px 18px rgba(201, 162, 39, 0.35);
+      transition: all .3s ease;
+    }
+
+    .btn-gold:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(201, 162, 39, 0.5);
+      color: #fff;
+    }
+
+    a {
+      color: var(--gold-dark);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    a:hover {
+      color: var(--gold);
+    }
+
+    .alert {
+      border-radius: 12px;
+      font-size: .9rem;
+    }
+
+    .alert-success {
+      background: #f0f7ec;
+      border-color: #cfe6c2;
+      color: #3f6b32;
+    }
+
+    .alert-danger {
+      background: #fdf0ee;
+      border-color: #f2d3cd;
+      color: #a3402f;
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 18px;
+      font-size: .9rem;
+      color: var(--ink-soft);
+    }
+  </style>
 </head>
+
 <body>
-  <div class="container mt-5 border rd">
-    <h2 class="mb-4 text-center">Login</h2>
+  <div class="auth-card">
+    <div class="text-center">
+      <span class="brand-logo">AK</span>
+    </div>
+    <h1>Welcome Back</h1>
+    <p class="subtitle">Login to your AK Automations dashboard</p>
 
-    <a href="/manager/welcome">Welcome</a>
-    <!-- Success Message -->
-    <% if (query.success) { %>
-        <div class="alert alert-success" role="alert">
-          <%= decodeURIComponent(query.success) %>
-        </div>
-      <% } %>
-  
-      <!-- Error Message -->
-      <% if (query.error) { %>
-        <div class="alert alert-danger" role="alert">
-          <%= decodeURIComponent(query.error) %>
-        </div>
-      <% } %>
+    <% if (query && query.success) { %>
+      <div class="alert alert-success" role="alert">
+        <i class="fa-solid fa-circle-check me-1"></i> <%= decodeURIComponent(query.success) %>
+      </div>
+    <% } %>
 
-    <form action="/manager/login" method="POST" class="mx-auto" style="width: 70%;">
+    <% if (query && query.error) { %>
+      <div class="alert alert-danger" role="alert">
+        <i class="fa-solid fa-circle-exclamation me-1"></i> <%= decodeURIComponent(query.error) %>
+      </div>
+    <% } %>
+
+    <form action="/manager/login" method="POST">
       <div class="mb-3">
         <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" id="email" name="email" required>
+        <input type="email" class="form-control" id="email" name="email" placeholder="you@example.com" required>
       </div>
-      <div class="mb-3">
+      <div class="mb-4">
         <label for="password" class="form-label">Password</label>
-        <input type="password" class="form-control" id="password" name="password" required>
+        <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required>
       </div>
-      <button type="submit" class="btn btn-custom mt-3 px-4 py-2 header">Login</button>
-      <p class="text-center mt-3">Don't have an account? <a href="/manager/register">Register</a></p>
+      <button type="submit" class="btn btn-gold">Login <i class="fa-solid fa-arrow-right ms-1"></i></button>
+      <p class="text-center mt-4 mb-0">Don't have an account? <a href="/manager/register">Register</a></p>
     </form>
+
+    <div class="back-link">
+      <a href="/manager/welcome"><i class="fa-solid fa-arrow-left me-1"></i> Back to Home</a>
+    </div>
   </div>
 
-  <script>
-    // Parse Query Params and Pass to EJS
-    const query = new URLSearchParams(window.location.search);
-    if (query.has('error')) {
-      const errorMsg = query.get('error');
-      document.querySelector('.alert').innerText = decodeURIComponent(errorMsg);
-    }
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

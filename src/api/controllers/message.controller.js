@@ -1,13 +1,81 @@
 const Message = require('../models/message.model')
+const User = require('../models/user.model')
+const {
+    getUserPlan,
+    normalizePlanRecipient,
+    releaseUnusedPlanRecipients,
+    reserveDailyMessage,
+    reservePlanRecipients,
+    settleDailyMessage,
+} = require('../helper/plans')
 
 async function saveToQueue(req, messageData) {
+    const owner =
+        req.planOwner ||
+        (await User.findOne({ 'insdetails.Token_Id': req.query.key }))
+    if (!owner) {
+        const error = new Error(
+            'Unable to identify the owner of this instance.'
+        )
+        error.status = 403
+        throw error
+    }
+    const plan = await getUserPlan(owner)
+    const recipient = String(messageData.id || '').trim()
     const message = new Message({
         ...messageData,
         tokenId: req.query.key,
         status: 'pending',
     })
-    await message.save()
+    const isSend = !['read', 'react', 'setstatus'].includes(message.type)
+    let usageDay
+    let contactReservation
+    if (isSend && plan.dailyMessageLimit) {
+        const reservation = await reserveDailyMessage(
+            owner._id,
+            message._id,
+            plan.dailyMessageLimit
+        )
+        if (!reservation.allowed) {
+            const error = new Error(reservation.message)
+            error.status = 429
+            throw error
+        }
+        usageDay = reservation.day
+    }
+    if (isSend && plan.maxUniqueRecipients >= 0) {
+        contactReservation = await reservePlanRecipients(
+            owner._id,
+            [normalizePlanRecipient(recipient)],
+            plan.maxUniqueRecipients
+        )
+        if (!contactReservation.allowed) {
+            await settleDailyMessage(owner._id, message._id, usageDay, false)
+            const error = new Error(contactReservation.message)
+            error.status = 429
+            throw error
+        }
+    }
+    if (usageDay) message.planUsageDay = usageDay
+    try {
+        await message.save()
+    } catch (error) {
+        await settleDailyMessage(owner._id, message._id, usageDay, false)
+        if (contactReservation?.added?.length) {
+            await releaseUnusedPlanRecipients(
+                owner._id,
+                contactReservation.added
+            )
+        }
+        throw error
+    }
     return message
+}
+
+function sendError(res, error) {
+    return res
+        .status(error.status || 500)
+        .json({ error: true, message: error.message })
 }
 
 exports.Text = async (req, res) => {
@@ -24,7 +92,7 @@ exports.Text = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -44,7 +112,7 @@ exports.Image = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -54,8 +122,8 @@ exports.sendurlfile = async (req, res) => {
             id: req.body.id,
             typeId: req.body.typeId,
             url: req.body.url,
-            type: 'url',
-            caption: req.body?.caption,
+            type: req.body.type,
+            options: req.body.options,
         })
         return res.status(201).json({
             error: false,
@@ -63,7 +131,7 @@ exports.sendurlfile = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -73,8 +141,8 @@ exports.sendbase64file = async (req, res) => {
             id: req.body.id,
             typeId: req.body.typeId,
             base64: req.body.base64,
-            type: 'base64',
-            caption: req.body?.caption,
+            type: 'document',
+            options: req.body.options,
         })
         return res.status(201).json({
             error: false,
@@ -82,7 +150,7 @@ exports.sendbase64file = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -104,7 +172,7 @@ exports.imageFile = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -126,7 +194,7 @@ exports.audioFile = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -148,7 +216,7 @@ exports.Video = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -167,7 +235,7 @@ exports.Audio = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -189,7 +257,7 @@ exports.Document = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -209,7 +277,7 @@ exports.Mediaurl = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -227,7 +295,7 @@ exports.Button = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -245,7 +313,7 @@ exports.Contact = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -265,7 +333,7 @@ exports.List = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -282,7 +350,8 @@ exports.SetStatus = async (req, res) => {
             return res.status(400).json({
                 error: true,
                 message:
-                    'status parameter must be one of ' + presenceList.join(', '),
+                    'status parameter must be one of ' +
+                    presenceList.join(', '),
             })
         }
 
@@ -299,7 +368,7 @@ exports.SetStatus = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -317,7 +386,7 @@ exports.MediaButton = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 
@@ -335,7 +404,7 @@ exports.Read = async (req, res) => {
             message: 'Message added to queue',
         })
     } catch (error) {
-        return res.status(500).json({ error: true, message: error.message })
+        return sendError(res, error)
     }
 }
 

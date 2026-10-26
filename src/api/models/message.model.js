@@ -28,8 +28,18 @@ const messageSchema = new mongoose.Schema({
         markUser: { type: String, default: '' },
     },
     status:{ type: String, enum: ['pending', 'sent', 'failed'], default: 'pending' },
+    failureReason: { type: String, default: '' },
+    sentAt: { type: Date },
+    scheduleId: { type: mongoose.Schema.Types.ObjectId },
+    scheduleRecipientIndex: { type: Number },
+    planUsageDay: { type: Date },
     
     createdAt: { type: Date, default: Date.now },
 });
+
+messageSchema.index(
+    { scheduleId: 1, scheduleRecipientIndex: 1 },
+    { unique: true, sparse: true }
+)
 
 module.exports = mongoose.model('Message', messageSchema);

@@ -4,157 +4,618 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
+  <title>Dashboard — AK Automations</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .card-tool {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 4px 20px rgba(169, 134, 29, 0.08);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .badge-gold {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      color: #fff;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      border-radius: 50px;
+    }
+    .btn-gold:hover {
+      filter: brightness(1.05);
+      color: #fff;
+    }
+    .log-terminal {
+      background: #1e1e1e;
+      color: #a6e22e;
+      font-family: monospace;
+      font-size: 0.85rem;
+      border-radius: 10px;
+      padding: 12px;
+      height: 130px;
+      overflow-y: auto;
+    }
+  </style>
 </head>
 
-<body>
+<body class="user-layout">
 
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#">
-        <img src="/img/logo.png" alt="Logo" width="30" height="30" class="me-2">
-        AK Automation
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/manager/dashboard">
+        <span class="d-inline-flex align-items-center justify-content-center" style="width:38px;height:38px;border-radius:10px;background:#fff;color:var(--gold-dark);font-weight:800;">AK</span>
+        <span>AK Automations</span>
       </a>
-      <p class="text-light m-0 ms-3">Hi, <%= user.username %>
-      </p>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="/manager/dashboard">Dashboard</a></li>
-          <li class="nav-item"><a class="nav-link" href="/manager/settings">Settings</a></li>
-          <li class="nav-item"><a class="nav-link" href="/manager/reports">Reports</a></li>
-          <li class="nav-item"><a class="nav-link" href="/manager/helps">Help</a></li>
-          <li class="nav-item"><a class="nav-link text-danger" href="/manager/logout">Logout</a></li>
-        </ul>
+      <div class="d-flex align-items-center gap-3 ms-auto">
+        <span class="text-white-50 small d-none d-md-inline">Welcome, <strong><%= user.username %></strong></span>
+        <a class="btn btn-light btn-sm rounded-pill px-3 d-none d-md-inline-flex" href="/manager/logout"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</a>
+        <button class="navbar-toggler d-lg-none" type="button" id="userSidebarToggle" aria-label="Open navigation menu" aria-controls="userSidebar" aria-expanded="false">
+          <i class="fa-solid fa-bars text-white"></i>
+        </button>
       </div>
     </div>
   </nav>
 
-  <div class="container-fluid">
-    <div class="row">
-      <nav class="col-md-3 col-lg-2 d-md-block sidebar">
-        <div class="position-sticky pt-3">
-          <ul class="nav flex-column">
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/home' ? 'active' : '' %>" href="/manager/dashboard">Dashboard</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/settings' ? 'active' : '' %>" href="/manager/settings">Settings</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/reports' ? 'active' : '' %>" href="/manager/reports">Reports</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= page === 'user/helps' ? 'active' : '' %>" href="/manager/helps">Help</a>
-            </li>
-          </ul>
+  <div class="user-sidebar-overlay" id="userSidebarOverlay"></div>
+  <div class="container-fluid user-app">
+    <div class="row gx-0">
+      
+      <!-- Sidebar Navigation -->
+      <nav class="col-md-3 col-lg-2 sidebar" id="userSidebar">
+        <div class="position-sticky pt-4 px-3">
+          <div class="text-center mb-4 pb-3 border-bottom">
+            <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-2" style="width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#fff;font-weight:800;font-size:1.25rem;">AK</div>
+            <h6 class="mb-0 fw-bold text-uppercase small">User Panel</h6>
+          </div>
+          <%- include('partials/sidebar-navigation', { activePage: 'dashboard' }) %>
         </div>
       </nav>
 
-      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-        <div class="d-flex justify-content-between flex-wrap align-items-center py-3 mb-4 border-bottom">
-          <h1 class="h2">Dashboard</h1>
-        </div>
-        <p>Welcome to the Dashboard.</p>
-
-        <div class="container mt-5">
-          <div class="row">
-              <!-- First Card: Basic User Info -->
-              <div class="col-md-6">
-                  <div class="card shadow-lg p-3 mb-4 bg-white rounded">
-                      <div class="card-body">
-                          <h5 class="card-title text-center">User Profile</h5>
-                          <hr>
-                          <p><strong>Username:</strong> <span id="username"></span></p>
-                          <p><strong>Email:</strong> <span id="email"></span></p>
-                          <p><strong>Plan Status:</strong> <span id="planStatus"></span></p>
-                          <p><strong>Plan Type:</strong> <span id="planType"></span></p>
-                      </div>
-                  </div>
-              </div>
-      
-              <!-- Second Card: Subscription & Instance Info -->
-              <div class="col-md-6">
-                  <div class="card shadow-lg p-3 mb-4 bg-white rounded">
-                      <div class="card-body">
-                          <h5 class="card-title text-center">Subscription Details</h5>
-                          <hr>
-                          <p><strong>Start Date:</strong> <span id="startDate"></span></p>
-                          <p><strong>End Date:</strong> <span id="endDate"></span></p>
-                          <p><strong>Role:</strong> <span id="role"></span></p>
-                          <p><strong>Total Profile:</strong> <span id="manyInstance"></span></p>
-                         
-                      </div>
-                  </div>
-              </div>
+      <!-- Main Content -->
+      <main class="col-md-9 col-lg-10 px-3 px-md-4 py-4">
+        
+        <!-- Header -->
+        <div class="d-flex justify-content-between flex-wrap align-items-center pb-2 mb-3 border-bottom">
+          <div>
+            <h2 class="fw-bold text-dark mb-0">User Portal Dashboard</h2>
+            <small class="text-muted">Manage your WhatsApp instances, check device status, and monitor your plan.</small>
           </div>
-      </div>
+          <a href="/manager/settings" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+            <i class="fa-solid fa-gear me-1"></i> Device Settings
+          </a>
+        </div>
 
-        <table class="table table-bordered table-hover mt-4">
-          <thead class="table-dark">
-            <tr>
-              <th>Token</th>
-              <th>Dealy Message / Hour</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="messageQueueTable">
-          </tbody>
-        </table>
+        <% if (user.planStatus === 'Expired' && !user.role.includes('admin')) { %>
+          <div class="alert alert-danger shadow-sm rounded-3" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Plan expired.</strong> Your WhatsApp instances have been disconnected. Renew your plan to create or reconnect an instance.
+          </div>
+        <% } %>
 
-        <script>
-          async function fetchMessageQueue() {
-            try {
-              let response = await fetch('/manager/userDtailesData'); // Update the API endpoint if needed
-              let result = await response.json();
+        <!-- Active Device & Plan Banner -->
+        <div class="card card-tool p-3 mb-4 bg-light border-0">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+              <span class="d-inline-flex align-items-center justify-content-center bg-success text-white rounded-circle" style="width: 44px; height: 44px;">
+                <i class="fa-brands fa-whatsapp fs-4"></i>
+              </span>
+              <div>
+                <h6 class="fw-bold mb-0">Sending Instance: 
+                  <span id="activeInstanceBadge" class="text-primary" data-key="<%= user.insdetails && user.insdetails[0] ? user.insdetails[0].Token_Id : '' %>">
+                    <%= user.insdetails && user.insdetails[0] ? user.insdetails[0].Token_Id : 'No Instance' %>
+                  </span>
+                </h6>
+                <div class="d-flex align-items-center flex-wrap gap-2 mt-1">
+                  <span id="activeInstanceStatus"><small class="text-muted">Checking connection status...</small></span>
+                  <span id="dashboardReconnectButtons" class="d-none">
+                    <button class="btn btn-sm btn-success rounded-pill px-3 shadow-sm" onclick="openDashboardQrModal()">
+                      <i class="fa-solid fa-qrcode me-1"></i> Reconnect (QR Scan)
+                    </button>
+                    <button class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-sm ms-1" onclick="openDashboardPairingModal()">
+                      <i class="fa-solid fa-mobile-screen-button me-1"></i> Reconnect (Phone Code)
+                    </button>
+                  </span>
+                </div>
+                <div class="small text-muted mt-2">
+                  Plan dates:
+                  <strong><%= user.startDate ? new Date(user.startDate).toLocaleDateString('en-IN') : '—' %></strong>
+                  to
+                  <strong><%= user.endDate ? new Date(user.endDate).toLocaleDateString('en-IN') : '—' %></strong>
+                </div>
+                <div class="small text-muted mt-1">
+                  <% if (plan.dailyMessageLimit) { %>
+                    Today's messages: <strong><%= dailyUsage.sent %> / <%= plan.dailyMessageLimit %></strong>
+                    (<%= Math.max(0, plan.dailyMessageLimit - dailyUsage.sent - dailyUsage.reserved) %> remaining)
+                  <% } else { %>
+                    Daily messages: <strong>No daily cap</strong>
+                  <% } %>
+                  · Contacts this plan: <strong><%= user.planRecipientNumbers ? user.planRecipientNumbers.length : 0 %> / <%= plan.maxUniqueRecipients < 0 ? 'Unlimited' : plan.maxUniqueRecipients %></strong>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <span class="badge bg-<%= user.planStatus === 'Active' ? 'success' : 'warning text-dark' %> align-self-center px-3 py-2 rounded-pill">
+                Plan: <%= user.planStatus %> (<%= plan.name || user.planType || 'Standard' %>)
+              </span>
+              <a href="/manager/settings" class="btn btn-gold btn-sm px-3 rounded-pill">
+                <i class="fa-solid fa-gear me-1"></i> Settings / Link QR
+              </a>
+            </div>
+          </div>
+        </div>
 
-              if (result.success) {
-                let tableBody = document.getElementById("messageQueueTable");
-                tableBody.innerHTML = "";
+        <!-- Quick Stats Grid -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="card card-tool p-3 border-0 h-100">
+              <div class="d-flex align-items-center gap-3">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-3" style="width: 48px; height: 48px;">
+                  <i class="fa-solid fa-layer-group fs-5"></i>
+                </div>
+                <div>
+                  <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">Connected Instances</small>
+                  <h4 class="fw-bold mb-0 text-dark"><%= user.insdetails ? user.insdetails.length : 0 %> <span class="text-muted fs-6 fw-normal">/ <%= plan.manyInstance || user.manyInstance || 1 %></span></h4>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card card-tool p-3 border-0 h-100">
+              <div class="d-flex align-items-center gap-3">
+                <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-3" style="width: 48px; height: 48px;">
+                  <i class="fa-solid fa-shield-halved fs-5"></i>
+                </div>
+                <div>
+                  <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">Plan Subscription</small>
+                  <h5 class="fw-bold mb-0 text-dark">
+                    <span class="badge bg-<%= user.planStatus === 'Active' ? 'success' : 'danger' %> me-1">
+                      <%= user.planStatus %>
+                    </span>
+                    <span class="fs-6 text-muted"><%= user.planType || 'Standard' %></span>
+                  </h5>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card card-tool p-3 border-0 h-100">
+              <div class="d-flex align-items-center gap-3">
+                <div class="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-10 text-warning rounded-3" style="width: 48px; height: 48px;">
+                  <i class="fa-solid fa-clock fs-5"></i>
+                </div>
+                <div>
+                  <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">Plan Validity</small>
+                  <h6 class="fw-bold mb-0 text-dark">
+                    <%= user.planExpiry ? new Date(user.planExpiry).toLocaleDateString() : 'Active' %>
+                  </h6>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        <!-- Portal Navigation & Action Cards -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-6 col-lg-4">
+            <div class="card card-tool p-4 border-0 h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 50px; height: 50px;">
+                  <i class="fa-solid fa-gear fs-4"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Device Management</h5>
+                <p class="text-muted small">WhatsApp instances connect karein, QR code scan karein, phone pairing code use karein aur delay settings configure karein.</p>
+              </div>
+              <div class="pt-3">
+                <a href="/manager/settings" class="btn btn-outline-primary fw-semibold rounded-pill w-100">
+                  <i class="fa-solid fa-arrow-right me-1"></i> Manage Devices
+                </a>
+              </div>
+            </div>
+          </div>
 
-                document.getElementById("username").innerText = result.data.username;
-                document.getElementById("email").innerText = result.data.email;
-                document.getElementById("planStatus").innerText = result.data.planStatus;
-                document.getElementById("planType").innerText = result.data.planType;
-                document.getElementById("startDate").innerText = new Date(result.data.startDate).toDateString();
-                document.getElementById("endDate").innerText = new Date(result.data.endDate).toDateString();
-                document.getElementById("role").innerText = result.data.role.join(", ");
-                document.getElementById("manyInstance").innerText = result.data.manyInstance;
+          <div class="col-md-6 col-lg-4">
+            <div class="card card-tool p-4 border-0 h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle mb-3" style="width: 50px; height: 50px;">
+                  <i class="fa-solid fa-chart-line fs-4"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Message Reports</h5>
+                <p class="text-muted small">Sent messages ke delivery logs, message history aur token usage reports check karein.</p>
+              </div>
+              <div class="pt-3">
+                <a href="/manager/reports" class="btn btn-outline-success fw-semibold rounded-pill w-100">
+                  <i class="fa-solid fa-arrow-right me-1"></i> View Reports
+                </a>
+              </div>
+            </div>
+          </div>
 
+          <div class="col-md-6 col-lg-4">
+            <div class="card card-tool p-4 border-0 h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-inline-flex align-items-center justify-content-center bg-info bg-opacity-10 text-info rounded-circle mb-3" style="width: 50px; height: 50px;">
+                  <i class="fa-solid fa-circle-question fs-4"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Help & API Docs</h5>
+                <p class="text-muted small">API integration guide, webhook endpoints, sample code aur support assistance access karein.</p>
+              </div>
+              <div class="pt-3">
+                <a href="/manager/helps" class="btn btn-outline-info fw-semibold rounded-pill w-100">
+                  <i class="fa-solid fa-arrow-right me-1"></i> Open Help Center
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        <!-- QR Code Modal on Dashboard -->
+        <div id="dashboardQrModal" class="modal fade" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4">
+              <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-success"><i class="fa-solid fa-qrcode me-2"></i>Scan QR Code to Reconnect</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="closeDashboardQrModal()"></button>
+              </div>
+              <div class="modal-body text-center py-4">
+                <p class="text-muted small mb-3">WhatsApp app kholein &gt; Linked Devices &gt; Link a Device scan karein:</p>
+                <div id="dashboardQrcodeBox" class="p-3 bg-light rounded-3 d-inline-block shadow-sm" style="min-height: 260px; min-width: 260px;">
+                  <div class="spinner-border text-success my-5" role="status"></div>
+                  <div class="small text-muted mt-2">QR Code generate ho raha hai...</div>
+                </div>
+                <div class="mt-3">
+                  <small class="text-muted"><i class="fa-solid fa-arrows-rotate me-1"></i> QR Code automatically refresh hoga.</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                result.data.insdetails.forEach(item => {
-                  let row = `<tr>
-                              <td>${item.Token_Id}</td>
-                              <td>${item.toDelay ? item.toDelay : ''}</td>
-                              <td> </td>
-                          </tr>`;
-                  tableBody.innerHTML += row;
-                });
-              } else {
-                console.error("Failed to fetch data:", result.message);
-              }
-            } catch (error) {
-              console.error("Error fetching message queue:", error);
-            }
-          }
+        <!-- Pairing Code Modal on Dashboard -->
+        <div class="modal fade" id="dashboardPairingModal" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow">
+              <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-success"><i class="fa-solid fa-mobile-screen-button me-2"></i>Login via Phone Number</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body py-4">
+                <p class="text-muted small">Bina camera scan kiye WhatsApp par 8-digit code se reconnect karein:</p>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">WhatsApp Number (with Country Code):</label>
+                  <input type="text" id="dashboardPairingPhone" class="form-control form-control-lg rounded-3" placeholder="e.g. 919876543210">
+                  <small class="text-muted">India ke liye 91 shuru me zaroor lagayein.</small>
+                </div>
 
-          // Fetch data on page load
-          document.addEventListener("DOMContentLoaded", fetchMessageQueue);
-        </script>
+                <div class="text-center py-3 d-none" id="dashboardPairingResultBox">
+                  <span class="text-muted small">Aapka 8-Digit Pairing Code:</span>
+                  <h2 class="fw-bold letter-spacing-2 text-primary my-2" id="dashboardDisplayPairingCode">---- ----</h2>
+                  <small class="text-success"><i class="fa-solid fa-circle-check me-1"></i> Phone par WhatsApp notification check karein aur ye code enter karein!</small>
+                </div>
 
-
+                <button class="btn btn-success w-100 fw-bold py-2 rounded-pill mt-2" id="btnDashboardPairing" onclick="requestDashboardPairingCode()">
+                  <i class="fa-solid fa-key me-1"></i> Get Pairing Code
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <%- include('partials/footer') %>
       </main>
     </div>
   </div>
 
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
+  <script>
+    if (window.toastr) {
+      toastr.options = { positionClass: "toast-bottom-right", timeOut: 3000 };
+    }
+
+    // Check Sending Instance Connection Status on Page Load
+    async function checkActiveStatus() {
+      const activeKey = "<%= user.insdetails && user.insdetails[0] ? user.insdetails[0].Token_Id : '' %>";
+      const btnGroup = document.getElementById('dashboardReconnectButtons');
+      if (!activeKey) {
+        document.getElementById('activeInstanceStatus').innerHTML = '<span class="text-danger">No instance found. Link a device in Settings.</span>';
+        if (btnGroup) btnGroup.classList.add('d-none');
+        return;
+      }
+      try {
+        const res = await fetch(`/instance/info?key=${activeKey}`);
+        const data = await res.json();
+        const statusEl = document.getElementById('activeInstanceStatus');
+        if (data.instance_data?.phone_connected) {
+          statusEl.innerHTML = '<span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i> Online & Ready</span>';
+          if (btnGroup) btnGroup.classList.add('d-none');
+        } else {
+          statusEl.innerHTML = '<span class="badge bg-danger"><i class="fa-solid fa-circle-xmark me-1"></i> Offline</span>';
+          if (btnGroup) btnGroup.classList.remove('d-none');
+        }
+      } catch {
+        document.getElementById('activeInstanceStatus').innerText = 'Status check failed';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', checkActiveStatus);
+
+    let dashboardGroups = [];
+
+    function getDashboardInstanceKey() {
+      return document.getElementById('activeInstanceBadge')?.dataset.key || '';
+    }
+
+    function renderDashboardGroups(groups) {
+      const list = document.getElementById('dashboardGroupsList');
+      const search = document.getElementById('dashboardGroupsSearch').value.trim().toLowerCase();
+      const filteredGroups = groups.filter(({ id, group }) => {
+        const participants = Array.isArray(group.participants) ? group.participants : [];
+        const searchableText = [
+          group.subject,
+          id,
+          ...participants.flatMap(participant => [participant.id, participant.phoneNumber])
+        ].filter(Boolean).join(' ').toLowerCase();
+        return searchableText.includes(search);
+      });
+
+      list.replaceChildren();
+      if (filteredGroups.length === 0) {
+        document.getElementById('dashboardGroupsStatus').textContent = groups.length
+          ? 'Search se match karta koi group nahi mila.'
+          : 'Is WhatsApp account par koi group nahi mila.';
+        return;
+      }
+
+      document.getElementById('dashboardGroupsStatus').textContent = '';
+      filteredGroups.forEach(({ id, group }) => {
+        const participants = Array.isArray(group.participants) ? group.participants : [];
+        const column = document.createElement('div');
+        column.className = 'col-12 col-lg-6';
+
+        const card = document.createElement('div');
+        card.className = 'border rounded-3 p-3 h-100 bg-white';
+
+        const heading = document.createElement('div');
+        heading.className = 'd-flex justify-content-between align-items-start gap-2';
+        const title = document.createElement('h6');
+        title.className = 'fw-bold mb-1 text-break';
+        title.textContent = group.subject || 'Unnamed group';
+        const memberCount = document.createElement('span');
+        memberCount.className = 'badge bg-light text-dark flex-shrink-0';
+        memberCount.textContent = `${group.size ?? participants.length} members`;
+        heading.append(title, memberCount);
+        card.append(heading);
+
+        const groupId = document.createElement('div');
+        groupId.className = 'text-muted small text-break mb-2';
+        groupId.textContent = id;
+        card.append(groupId);
+
+        const exportButton = document.createElement('button');
+        exportButton.type = 'button';
+        exportButton.className = 'btn btn-outline-success btn-sm rounded-pill px-3 mb-2';
+        exportButton.innerHTML = '<i class="fa-solid fa-file-csv me-1"></i> Export this group contacts';
+        exportButton.addEventListener('click', () => {
+          const filename = (group.subject || 'whatsapp-group')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '') || 'whatsapp-group';
+          downloadDashboardNumbers(participants, `${filename}-contacts`);
+        });
+        card.append(exportButton);
+
+        const details = document.createElement('details');
+        const summary = document.createElement('summary');
+        summary.className = 'text-success small fw-semibold';
+        summary.textContent = 'Members dekhein';
+        details.append(summary);
+
+        const memberList = document.createElement('ul');
+        memberList.className = 'list-group list-group-flush mt-2';
+        if (participants.length === 0) {
+          const emptyMember = document.createElement('li');
+          emptyMember.className = 'list-group-item px-0 small text-muted';
+          emptyMember.textContent = 'Member details available nahi hain.';
+          memberList.append(emptyMember);
+        } else {
+          participants.forEach(participant => {
+            const item = document.createElement('li');
+            item.className = 'list-group-item px-0 py-2 d-flex justify-content-between align-items-start gap-2';
+            const identity = document.createElement('span');
+            identity.className = 'small text-break';
+            identity.textContent = participant.phoneNumber || participant.id || 'Unknown member';
+            const role = document.createElement('span');
+            role.className = `badge ${participant.admin ? 'bg-warning text-dark' : 'bg-light text-dark'} flex-shrink-0`;
+            role.textContent = participant.admin === 'superadmin'
+              ? 'Super admin'
+              : participant.admin === 'admin' ? 'Admin' : 'Member';
+            item.append(identity, role);
+            memberList.append(item);
+          });
+        }
+        details.append(memberList);
+        card.append(details);
+        column.append(card);
+        list.append(column);
+      });
+      document.getElementById('dashboardGroupsStatus').textContent =
+        `${filteredGroups.length} of ${groups.length} groups`;
+    }
+
+    function exportDashboardGroupNumbers() {
+      const participants = dashboardGroups.flatMap(({ group }) =>
+        Array.isArray(group.participants) ? group.participants : []
+      );
+      downloadDashboardNumbers(participants, 'whatsapp-group-numbers');
+    }
+
+    function downloadDashboardNumbers(participants, filename) {
+      const numbers = new Set(participants.map(participant => {
+        const phone = participant.phoneNumber ||
+          (participant.id?.endsWith('@s.whatsapp.net') ? participant.id : '');
+        return phone.replace(/\D/g, '');
+      }).filter(Boolean));
+      if (numbers.size === 0) {
+        toastr.info('Export ke liye koi mobile number available nahi hai.');
+        return;
+      }
+
+      const csv = `Mobile Number\r\n${Array.from(numbers).join('\r\n')}`;
+      const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${filename}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+    }
+
+    async function loadDashboardGroups() {
+      const key = getDashboardInstanceKey();
+      const status = document.getElementById('dashboardGroupsStatus');
+      const button = document.getElementById('dashboardGroupsRefresh');
+      const exportButton = document.getElementById('dashboardGroupsExport');
+      const search = document.getElementById('dashboardGroupsSearch');
+      const count = document.getElementById('dashboardGroupsCount');
+      const list = document.getElementById('dashboardGroupsList');
+
+      if (!key) {
+        status.textContent = 'Pehle Device Settings se WhatsApp instance connect karein.';
+        list.replaceChildren();
+        count.textContent = '0 groups';
+        exportButton.disabled = true;
+        return;
+      }
+
+      button.disabled = true;
+      status.innerHTML = '<span class="spinner-border spinner-border-sm text-success me-2" role="status"></span>Groups load ho rahe hain...';
+      try {
+        const params = new URLSearchParams({ key });
+        const response = await fetch(`/group/getallgroups?${params.toString()}`);
+        const result = await response.json();
+        if (!response.ok || result.error) {
+          throw new Error(result.message || 'Groups load nahi ho sake.');
+        }
+
+        dashboardGroups = Object.entries(result.data || {}).map(([id, group]) => ({ id, group }));
+        count.textContent = `${dashboardGroups.length} groups`;
+        exportButton.disabled = dashboardGroups.length === 0;
+        search.disabled = false;
+        renderDashboardGroups(dashboardGroups);
+      } catch (error) {
+        dashboardGroups = [];
+        count.textContent = '0 groups';
+        exportButton.disabled = true;
+        list.replaceChildren();
+        status.textContent = error.message || 'Groups load karte waqt error aaya.';
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    let dashboardQrInterval = null;
+
+    function openDashboardQrModal() {
+      const activeKey = "<%= user.insdetails && user.insdetails[0] ? user.insdetails[0].Token_Id : '' %>";
+      if (!activeKey) return toastr.warning('Koi instance available nahi hai.');
+
+      const modalEl = document.getElementById('dashboardQrModal');
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+
+      document.getElementById('dashboardQrcodeBox').innerHTML = `
+        <div class="spinner-border text-success my-5" role="status"></div>
+        <div class="small text-muted mt-2">QR Code generate ho raha hai...</div>
+      `;
+
+      updateDashboardQr(activeKey);
+      if (dashboardQrInterval) clearInterval(dashboardQrInterval);
+      dashboardQrInterval = setInterval(() => updateDashboardQr(activeKey), 3500);
+
+      modalEl.addEventListener('hidden.bs.modal', function() {
+        if (dashboardQrInterval) clearInterval(dashboardQrInterval);
+      }, { once: true });
+    }
+
+    function closeDashboardQrModal() {
+      if (dashboardQrInterval) clearInterval(dashboardQrInterval);
+    }
+
+    async function updateDashboardQr(instanceKey) {
+      try {
+        const res = await fetch(`/instance/qrbase64?key=${instanceKey}`);
+        const data = await res.json();
+        if (data.error) {
+          if (dashboardQrInterval) clearInterval(dashboardQrInterval);
+          const modalEl = document.getElementById('dashboardQrModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+          toastr.success('WhatsApp connected successfully!');
+          checkActiveStatus();
+        } else if (data.qrcode) {
+          const qrBox = document.getElementById('dashboardQrcodeBox');
+          qrBox.innerHTML = `<img src="${data.qrcode}" class="img-fluid rounded-3" style="max-height: 240px;" alt="WhatsApp QR Code">`;
+        }
+      } catch (err) {
+        console.error('Error fetching QR:', err);
+      }
+    }
+
+    function openDashboardPairingModal() {
+      const activeKey = "<%= user.insdetails && user.insdetails[0] ? user.insdetails[0].Token_Id : '' %>";
+      if (!activeKey) return toastr.warning('Koi instance available nahi hai.');
+
+      document.getElementById('dashboardPairingResultBox').classList.add('d-none');
+      document.getElementById('dashboardDisplayPairingCode').innerText = '---- ----';
+      document.getElementById('dashboardPairingPhone').value = '';
+      new bootstrap.Modal(document.getElementById('dashboardPairingModal')).show();
+    }
+
+    async function requestDashboardPairingCode() {
+      const activeKey = "<%= user.insdetails && user.insdetails[0] ? user.insdetails[0].Token_Id : '' %>";
+      const number = document.getElementById('dashboardPairingPhone').value.trim();
+      if (!number) return toastr.warning('Kripya phone number country code ke sath daalein!');
+
+      const btn = document.getElementById('btnDashboardPairing');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Requesting...';
+
+      try {
+        const res = await fetch(`/instance/getcode?key=${activeKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ number: number })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          toastr.error(data.message || 'Pairing code request fail ho gaya');
+        } else {
+          document.getElementById('dashboardDisplayPairingCode').innerText = data.code || data.pairingCode || 'Generated';
+          document.getElementById('dashboardPairingResultBox').classList.remove('d-none');
+          toastr.success('Pairing code mil gaya! Apne WhatsApp phone me enter karein.');
+        }
+      } catch (err) {
+        toastr.error('Server error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-key me-1"></i> Get Pairing Code';
+      }
+    }
+  </script>
+  <script src="/js/user-navigation.js"></script>
 </body>
-
 </html>

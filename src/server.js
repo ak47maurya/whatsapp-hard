@@ -1,5 +1,5 @@
 const dotenv = require('dotenv')
-//const mongoose = require('mongoose')
+const mongoose = require('mongoose')
 const logger = require('pino')()
 dotenv.config()
 
@@ -7,19 +7,52 @@ const app = require('./config/express')
 const config = require('./config/config')
 
 const { Session } = require('./api/class/session')
+require('./api/class/scheduledMessageProcessor')
 
+let sessionsRestored = false
+let restoreInProgress
+
+const restoreStoredSessions = async () => {
+    if (!config.restoreSessionsOnStartup || sessionsRestored) {
+        return
+    }
+    if (config.mongoose.enabled && mongoose.connection.readyState !== 1) {
+        return
+    }
+    if (restoreInProgress) {
+        return restoreInProgress
+    }
+
+    const session = new Session()
+    restoreInProgress = session.restoreSessions()
+        .then((restoredSessions) => {
+            sessionsRestored = true
+            logger.info({ count: restoredSessions.length }, 'Sessions restored')
+        })
+        .catch((error) => {
+            logger.error({ err: error }, 'Error restoring sessions')
+        })
+        .finally(() => {
+            restoreInProgress = null
+        })
+
+    return restoreInProgress
+}
+
+if (config.mongoose.enabled) {
+    mongoose.connection.on('connected', restoreStoredSessions)
+    mongoose.connection.on('reconnected', restoreStoredSessions)
+}
 
 let server
 
 
 server = app.listen(config.port, '0.0.0.0', async () => {
     logger.info(`Listening on port ${config.port}`)
-   
-    if (config.restoreSessionsOnStartup) {
-        logger.info(`Restoring sessions`)
-        const session = new Session()
-        let restoreSessions = await session.restoreSessions()
-        logger.info(`Sessions restored`)
+    if (!config.mongoose.enabled) {
+        await restoreStoredSessions()
+    } else if (mongoose.connection.readyState === 1) {
+        await restoreStoredSessions()
     }
 })
 

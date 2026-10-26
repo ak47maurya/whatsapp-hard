@@ -2,7 +2,7 @@ const dotenv = require('dotenv')
 const https = require('https');
 const axios = require('axios');
 const agent = new https.Agent({
-	rejectUnauthorized: false
+	rejectUnauthorized: process.env.NODE_ENV !== 'production' ? false : true
 });
 dotenv.config()
 const config = require('../../config/config')

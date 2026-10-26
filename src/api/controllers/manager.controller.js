@@ -4,28 +4,61 @@ const bcrypt = require('bcrypt');
 const config = require('../../config/config');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const { enforcePlanExpiry } = require('../helper/planAccess');
+const Plan = require('../models/plan.model');
+const { ensureDefaultPlans, getDailyUsage, getUserPlan } = require('../helper/plans');
 
-
+const MONGODB_RETRY_DELAY = 5000;
+let mongoConnectionPending = false;
+let mongoRetryTimer;
 
 const connectDB = async () => {
+    if (!config.mongoose.enabled) {
+        console.log('MongoDB Connection Disabled');
+        return;
+    }
+    if (mongoConnectionPending || mongoose.connection.readyState === 1) {
+        return;
+    }
+
+    mongoConnectionPending = true;
     try {
-        if (config.mongoose.enabled) {
-            await mongoose.connect(config.mongoose.url, config.mongoose.options);
-            console.log('MongoDB Connected Successfully');
-        } else {
-            console.log('MongoDB Connection Disabled');
-        }
+        await mongoose.connect(config.mongoose.url, config.mongoose.options);
     } catch (error) {
         console.error('MongoDB Connection Error:', error.message);
-        process.exit(1);
+        if (!mongoRetryTimer) {
+            mongoRetryTimer = setTimeout(() => {
+                mongoRetryTimer = null;
+                connectDB();
+            }, MONGODB_RETRY_DELAY);
+            mongoRetryTimer.unref();
+        }
+    } finally {
+        mongoConnectionPending = false;
     }
 };
+
+if (config.mongoose.enabled) {
+    mongoose.connection.on('disconnected', () => {
+        console.warn('MongoDB disconnected; waiting for the connection to recover');
+    });
+    mongoose.connection.on('connected', () => {
+        console.log('MongoDB Connected Successfully');
+    });
+    mongoose.connection.on('reconnected', () => {
+        console.log('MongoDB connection recovered');
+    });
+    mongoose.connection.on('error', (error) => {
+        console.error('MongoDB Connection Error:', error.message);
+    });
+}
+
 connectDB()
 
 // new user Resiter
 exports.register = async (req, res) => {
     try {
-        const { username, email, password, role, manyInstance } = req.body;
+        const { username, email, password } = req.body;
         if (!username || !email || !password) {
             return res.status(400).json({ error: 'Username, email, and password are required.' });
         }
@@ -38,22 +71,27 @@ exports.register = async (req, res) => {
         }
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
-        // Get start date (today) and end date (3-day trial)
+        await ensureDefaultPlans();
+        const trialPlan = await Plan.findOne({ slug: 'trial', active: true });
+        if (!trialPlan) throw new Error('Default trial plan is unavailable.');
         const startDate = new Date();
-        const endDate = new Date();
-        endDate.setDate(startDate.getDate() + 2);
+        const endDate = new Date(
+            startDate.getTime() +
+                trialPlan.durationDays * 24 * 60 * 60 * 1000
+        );
 
         // User data object
         const userData = {
             username,
             email,
             password: hashedPassword,
-            role: role || ['user'],
-            manyInstance: 1,
+            role: ['user'],
+            planId: trialPlan._id,
+            manyInstance: trialPlan.manyInstance,
             startDate,
             endDate,
             planStatus: "Trial",
-            planType: "2 Day",
+            planType: trialPlan.name,
         };
         const newUser = await UserService.registerUser(userData);
         res.format({
@@ -86,9 +124,7 @@ exports.login = async (req, res) => {
         if (!isMatch) {
             return res.redirect('login?error=Invalid%20credentials');
         }
-        if (user.planStatus == "Expired") {
-            return res.redirect('login?error=Your%20Account%20Expired.')
-        }
+        await enforcePlanExpiry(user);
         const token = jwt.sign(
             {
                 userId: user._id,
@@ -99,7 +135,7 @@ exports.login = async (req, res) => {
                 planType: user.planType,
                 insDetails: user.insdetails
             },
-            process.env.JWT_SECRET || 'your_jwt_secret',
+            process.env.JWT_SECRET,
             { expiresIn: '1h' }
         );
         res.cookie('token', token, {
@@ -115,7 +151,7 @@ exports.login = async (req, res) => {
 };
 
 // Redirected page user or admin role wise
-exports.redirectByRole = (req, res) => {
+exports.redirectByRole = async (req, res) => {
     const { user } = req;
     if (user) {
         if (user.role.includes('admin')) {
@@ -125,10 +161,14 @@ exports.redirectByRole = (req, res) => {
                 user,
             });
         } else {
+            const plan = await getUserPlan(user);
+            const dailyUsage = await getDailyUsage(user._id);
             // Redirect to User Home Page
             return res.status(200).render('user/home', {
                 message: 'Welcome User!',
                 user,
+                plan,
+                dailyUsage,
                 page: 'user/home'
             });
         }
@@ -140,7 +180,7 @@ exports.redirectByRole = (req, res) => {
 exports.users = async (req, res) => {
     try {
         const user = await UserService.getAllUsers(req.body);
-        res.status(201).json(user);
+        res.status(200).json(user);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -149,9 +189,24 @@ exports.users = async (req, res) => {
 // add new User
 exports.addNewUsers = async (req, res) => {
     try {
-        const { username, email, password, role, manyInstance, startDate, endDate, planStatus, planType } = req.body;
+        const {
+            username,
+            email,
+            password,
+            role,
+            planId,
+            startDate,
+            endDate,
+            planStatus,
+        } = req.body;
         if (!username || !email || !password) {
             return res.status(400).json({ error: 'Username, email, and password are required.' });
+        }
+        const selectedPlan = planId && mongoose.Types.ObjectId.isValid(planId)
+            ? await Plan.findOne({ _id: planId, active: true })
+            : await Plan.findOne({ slug: 'trial', active: true });
+        if (!selectedPlan) {
+            return res.status(400).json({ error: 'Select an active plan.' });
         }
         const existingUser = await UserService.getUserByEmail(email);
         if (existingUser) {
@@ -159,20 +214,29 @@ exports.addNewUsers = async (req, res) => {
         }
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const startsAt = startDate ? new Date(startDate) : new Date();
+        const endsAt = endDate
+            ? new Date(endDate)
+            : new Date(startsAt.getTime() + selectedPlan.durationDays * 86400000);
+        if (!Number.isFinite(startsAt.getTime()) || !Number.isFinite(endsAt.getTime()) || endsAt <= startsAt) {
+            return res.status(400).json({ error: 'Enter a valid plan start and end date.' });
+        }
         const userData = {
             username,
             email,
             password: hashedPassword,
             role: role || ['user'],
-            manyInstance: manyInstance || 1,
-            startDate,
-            endDate,
-            planStatus,
-            planType
-
+            planId: selectedPlan._id,
+            manyInstance: selectedPlan.manyInstance,
+            planRecipientNumbers: [],
+            planSentRecipientNumbers: [],
+            startDate: startsAt,
+            endDate: endsAt,
+            planStatus: planStatus || 'Trial',
+            planType: selectedPlan.name,
         };
         const newUser = await UserService.registerUser(userData);
-        res.status(200).json({ succes: 'User Successfully Registerd.' })
+        res.status(201).json({ success: 'User Successfully Registered.', id: newUser._id })
     } catch (error) {
         return res.status(400).json({ error: 'api error. ' + error });
     }
@@ -183,7 +247,37 @@ exports.addNewUsers = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
     try {
-        const user = await UserService.updateUser(req.params.id, req.body);
+        const existingUser = await UserService.getUserById(req.params.id);
+        const updates = {
+            username: req.body.username,
+            email: req.body.email,
+            role: req.body.role,
+            startDate: req.body.startDate,
+            endDate: req.body.endDate,
+            planStatus: req.body.planStatus,
+        };
+        if (req.body.planId) {
+            if (!mongoose.Types.ObjectId.isValid(req.body.planId)) {
+                return res.status(400).json({ error: 'Select a valid plan.' });
+            }
+            const selectedPlan = await Plan.findOne({
+                _id: req.body.planId,
+                active: true,
+            });
+            if (!selectedPlan) {
+                return res.status(400).json({ error: 'Select an active plan.' });
+            }
+            updates.planId = selectedPlan._id;
+            updates.planType = selectedPlan.name;
+            updates.manyInstance = selectedPlan.manyInstance;
+            if (String(existingUser.planId || '') !== String(selectedPlan._id)) {
+                updates.planRecipientNumbers = [];
+                updates.planSentRecipientNumbers = [];
+            }
+        } else if (req.body.manyInstance !== undefined) {
+            updates.manyInstance = Number(req.body.manyInstance);
+        }
+        const user = await UserService.updateUser(req.params.id, updates);
         res.status(201).json(user);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -205,17 +299,24 @@ exports.addNewInstance = async (req, res) => {
     try {
         const instanceData = req.body;
         const { user } = req;
+        if (await enforcePlanExpiry(user)) {
+            return res.status(403).json({
+                error: true,
+                message: "Your plan has expired. Renew your plan before creating an instance.",
+            });
+        }
         if (!instanceData.key) {
             return res.status(400).json({ message: "Key is required" });
         }
         const userKey = { Token_Id: instanceData.key };
-        if (user.insdetails.length >= user.manyInstance) {
-            res.status(501).json({ message: "Limit reached! Cannot add more instances." });
+        const plan = await getUserPlan(user);
+        if (user.insdetails.length >= plan.manyInstance) {
+            return res.status(501).json({ message: "Limit reached! Cannot add more instances." });
         } else {
             const updatedUser = await UserService.addInstance(user._id, userKey);
             try {
                 const initResponse = await axios.post(
-                    `${req.protocol}://${req.get('host')}/instance/init?admintoken=122`,
+                    `${req.protocol}://${req.get('host')}/instance/init?admintoken=${config.adminToken}`,
                     instanceData
                 );
                 res.status(200).json({
@@ -264,7 +365,7 @@ exports.instanceList = async (req, res) => {
         const instances = await UserService.getInstanceList(req.user._id);
         // Get instance list from the external service
         const response = await axios.get(
-            `${req.protocol}://${req.get('host')}/instance/list?admintoken=122`
+            `${req.protocol}://${req.get('host')}/instance/list?admintoken=${config.adminToken}`
         );
         if (!response.data || !Array.isArray(response.data.data)) {
             return res.status(500).json({
@@ -272,22 +373,23 @@ exports.instanceList = async (req, res) => {
                 message: "Invalid response from instance list endpoint",
             });
         }
-        const matchedData = instances
-            .map(token =>
-                response.data.data.find(instance => instance.instance_key === token.Token_Id)
-            )
-            .filter(instance => instance !== undefined);
-        if (matchedData.length > 0) {
-            return res.status(200).json({
-                message: "Matching keys found",
-                data: matchedData,
-            });
-        } else {
-            return res.status(200).json({
-                message: "No matching keys found",
-                data: [],
-            });
-        }
+        const activeList = response.data.data || [];
+        const matchedData = instances.map(token => {
+            const found = activeList.find(instance => instance.instance_key === token.Token_Id);
+            if (found) {
+                return found;
+            }
+            return {
+                instance_key: token.Token_Id,
+                phone_connected: false,
+                webhook: false,
+                user: { id: 'Disconnected' }
+            };
+        });
+        return res.status(200).json({
+            message: matchedData.length > 0 ? "Matching keys found" : "No matching keys found",
+            data: matchedData,
+        });
     } catch (e) {
         console.error("Error in instanceList:", e.message);
         return res.status(500).json({
@@ -361,7 +463,7 @@ exports.getMessagesByInstance = async (req, res) => {
         }
 
         const messages = await MessageService.getMessageList(tokenId);
-        console.log(messages)
+        // console.log(messages)
 
         return res.status(200).json({
             error: false,
@@ -472,7 +574,3 @@ exports.userDtailesData = (req, res) => {
         });
     }
 };
-
-
-
-

@@ -46,7 +46,6 @@ const fs = require('fs').promises;
 const getMIMEType = require('mime-types');
 const readFileAsync = promisify(fs.readFile);
 const util = require('util');
-const url = require('url');
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function clear() {
@@ -556,6 +555,17 @@ class WhatsAppInstance {
 
 			await Disconnect.lastDisconnect(this.key, lastDisconnect);
 
+			if (this.instance.deleted) {
+				this.instance.online = false;
+				this.instance.qr = '';
+				if (connection === 'close') {
+					await this.deleteFolder('db/' + this.key);
+				} else if (connection === 'open' || qr) {
+					await sock?.logout();
+				}
+				return;
+			}
+
 			if (connection === 'connecting') return;
 
 			if (connection === 'close') {
@@ -856,30 +866,25 @@ class WhatsAppInstance {
 	async deleteInstance(key) {
 		const filePath = path.join('db/sessions.json');
 
-		let data = await fs.readFile(filePath, 'utf-8');
-		let sessions = JSON.parse(data);
-		let existingSession = sessions.find(session => session.key === key);
-
-		if (existingSession) {
-			let updatedSessions = sessions.filter(session => session.key !== key);
-
-			try {
-				let salvar = await fs.writeFile(filePath, JSON.stringify(updatedSessions, null, 2), 'utf-8');
-			} catch (error) {
-				console.log('erro ao salvar');
+		let sessions = [];
+		try {
+			const data = await fs.readFile(filePath, 'utf-8');
+			sessions = JSON.parse(data);
+		} catch (error) {
+			if (error.code !== 'ENOENT') {
+				throw error;
 			}
+		}
+		const updatedSessions = sessions.filter(session => session.key !== key);
+		if (updatedSessions.length !== sessions.length) {
+			await fs.writeFile(filePath, JSON.stringify(updatedSessions, null, 2), 'utf-8');
+		}
 
-			if (this.instance.online == true) {
-				this.instance.deleted = true;
-				await this.instance.sock?.logout();
-			} else {
-				await this.deleteFolder('db/' + this.key);
-			}
+		this.instance.deleted = true;
+		if (this.instance.online === true) {
+			await this.instance.sock?.logout();
 		} else {
-			return {
-				error: true,
-				message: 'Sessão não localizada',
-			};
+			await this.deleteFolder('db/' + this.key);
 		}
 	}
 
@@ -915,11 +920,20 @@ class WhatsAppInstance {
 		return id.includes('-') ? `${id}@g.us` : id;
 	}
 
-	getFileNameFromUrl(url) {
+	getFileNameFromUrl(url, mimetype = '', fallbackName = 'file') {
 		try {
 			const urlObj = new URL(url);
 			const pathname = urlObj.pathname;
-			const filename = pathname.split('/').pop();
+			const filename = decodeURIComponent(pathname.split('/').pop() || '');
+			if (filename && path.extname(filename)) {
+				return filename;
+			}
+
+			const extension = getMIMEType.extension(mimetype);
+			if (extension) {
+				return `${filename && filename !== 'uc' ? filename : fallbackName}.${extension}`;
+			}
+
 			return filename || 'file';
 		} catch (error) {
 			return 'file';
@@ -1162,15 +1176,64 @@ class WhatsAppInstance {
 		}
 
 		if (origem === 'url') {
-			const parsedUrl = url.parse(data.url);
+			const parsedUrl = new URL(data.url);
 			if (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') {
-				mimetype = await this.GetFileMime(data.url);
+				if (data.type === 'document' || data.type === 'image') {
+					const response = await axios.get(data.url, {
+						responseType: 'arraybuffer',
+						maxRedirects: 5,
+						timeout: 30000,
+					});
+					const fileBuffer = Buffer.from(response.data);
+					const contentDisposition = response.headers['content-disposition'] || '';
+					const encodedFilename = /filename\*=UTF-8''([^;]+)/i.exec(contentDisposition);
+					const plainFilename = /filename="?([^";]+)"?/i.exec(contentDisposition);
+					filename = encodedFilename
+						? decodeURIComponent(encodedFilename[1])
+						: plainFilename?.[1];
+					mimetype = (response.headers['content-type'] || '')
+						.split(';')[0]
+						.trim()
+						.toLowerCase();
 
-				if (!myArray.includes(mimetype.trim())) {
-					throw new Error('File ' + mimetype + ' is not allowed for ' + data.type);
+					if (!mimetype || mimetype === 'application/octet-stream') {
+						const filenameMime = filename && getMIMEType.lookup(filename);
+						if (filenameMime) {
+							mimetype = filenameMime;
+						} else if (fileBuffer.subarray(0, 5).toString() === '%PDF-') {
+							mimetype = 'application/pdf';
+						} else if (
+							fileBuffer[0] === 0xff &&
+							fileBuffer[1] === 0xd8 &&
+							fileBuffer[2] === 0xff
+						) {
+							mimetype = 'image/jpeg';
+						} else if (
+							fileBuffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+						) {
+							mimetype = 'image/png';
+						} else if (fileBuffer.subarray(0, 6).toString().match(/^GIF8[79]a$/)) {
+							mimetype = 'image/gif';
+						}
+					}
+
+					if (!myArray.includes(mimetype)) {
+						throw new Error(
+							`Downloaded file has unsupported content type "${mimetype || 'unknown'}"; verify the URL points to a publicly accessible ${data.type}`
+						);
+					}
+
+					type = fileBuffer;
+					filename = filename || await this.getFileNameFromUrl(data.url, mimetype, data.type);
+				} else {
+					mimetype = (await this.GetFileMime(data.url)).split(';')[0].trim().toLowerCase();
+
+					if (!myArray.includes(mimetype.trim())) {
+						throw new Error('File ' + mimetype + ' is not allowed for ' + data.type);
+					}
+
+					origem = data.url;
 				}
-
-				origem = data.url;
 			}
 		} else if (origem === 'base64') {
 			if (!data.filename || data.filename === '') { throw new Error('File name is required.'); }
@@ -1225,11 +1288,13 @@ class WhatsAppInstance {
 		} else {
 
 			if (!data.base64) {
-				type = {
-					url: data.url,
-				};
+				if (!((data.type === 'document' || data.type === 'image') && Buffer.isBuffer(type))) {
+					type = {
+						url: data.url,
+					};
 
-				filename = this.getFileNameFromUrl(data.url);
+					filename = await this.getFileNameFromUrl(data.url, mimetype, data.type);
+				}
 			}
 			else {
 
@@ -2099,7 +2164,6 @@ class WhatsAppInstance {
 
 	async groupGetInviteInfo(url) {
 		try {
-			await this.verifyGroup(id);
 			const codeurl = url.split('/');
 
 
@@ -2166,7 +2230,9 @@ class WhatsAppInstance {
 	// update db document -> chat
 	async updateDb(object) {
 		try {
-			await Chat.updateOne({ key: this.key }, { chat: object })
+			if (typeof Chat !== 'undefined') {
+				await Chat.updateOne({ key: this.key }, { chat: object })
+			}
 		} catch (e) {
 			logger.error('Error updating document failed')
 
@@ -2202,6 +2268,30 @@ class WhatsAppInstance {
 			return res
 		} catch (e) {
 			logger.error('Error react message failed')
+		}
+	}
+
+	async getWhatsappCode(phoneNumber) {
+		try {
+			if (!phoneNumber) {
+				return { error: true, message: 'Phone number is required' };
+			}
+			const cleanNumber = phoneNumber.toString().replace(/[^0-9]/g, '');
+			if (!this.instance.sock) {
+				return { error: true, message: 'WhatsApp socket is not initialized' };
+			}
+			const code = await this.instance.sock.requestPairingCode(cleanNumber);
+			return {
+				error: false,
+				code: code,
+				message: 'Pairing code generated successfully'
+			};
+		} catch (error) {
+			logger.error(`Error requesting pairing code: ${error.message}`);
+			return {
+				error: true,
+				message: error.message || 'Failed to request pairing code'
+			};
 		}
 	}
 }
