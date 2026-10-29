@@ -35,7 +35,7 @@ const DEFAULT_PLANS = [
         manyInstance: 2,
         dailyMessageLimit: 0,
         maxUniqueRecipients: -1,
-        maxRecipientsPerCampaign: 500,
+        maxRecipientsPerCampaign: 1000,
         features: [
             'Start Smart.',
             '2 Devices',
@@ -54,7 +54,7 @@ const DEFAULT_PLANS = [
         manyInstance: 4,
         dailyMessageLimit: 0,
         maxUniqueRecipients: -1,
-        maxRecipientsPerCampaign: 500,
+        maxRecipientsPerCampaign: 1500,
         features: [
             'Grow Fast.',
             '4 Devices • Faster Delivery',
@@ -74,7 +74,7 @@ const DEFAULT_PLANS = [
         manyInstance: 6,
         dailyMessageLimit: 0,
         maxUniqueRecipients: -1,
-        maxRecipientsPerCampaign: 500,
+        maxRecipientsPerCampaign: 2000,
         features: [
             'Scale with Control.',
             '6 Devices • Advanced Group Tools',
@@ -93,7 +93,7 @@ const DEFAULT_PLANS = [
         manyInstance: 8,
         dailyMessageLimit: 0,
         maxUniqueRecipients: -1,
-        maxRecipientsPerCampaign: 500,
+        maxRecipientsPerCampaign: 2500,
         features: [
             'Full Power.',
             '8 Devices • Real-time Reports',

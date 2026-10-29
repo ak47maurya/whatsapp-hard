@@ -6,19 +6,11 @@ const messageTemplateController = require('../controllers/messageTemplate.contro
 const templateScheduledMessageController = require('../controllers/templateScheduledMessage.controller')
 const numberCheckerController = require('../controllers/numberChecker.controller')
 const planController = require('../controllers/plan.controller')
-const {
-    checkCookies,
-    checkInsMongoId,
-    checkAdmin,
-} = require('../middlewares/checkCookies')
+const { checkCookies, checkInsMongoId, checkAdmin, } = require('../middlewares/checkCookies')
 
 const router = express.Router()
 
-router.get(
-    '/getallgroupswithmembers',
-    checkCookies,
-    groupController.getAllGroupsWithParticipants
-)
+router.get('/getallgroupswithmembers', checkCookies, groupController.getAllGroupsWithParticipants)
 
 // Admin User Data
 router.route('/users').get(checkAdmin, controller.users) // get All users
@@ -31,15 +23,9 @@ router.put('/plans/:id', checkAdmin, planController.update)
 router.get('/plan-summary', checkCookies, planController.summary)
 
 router.route('/addNewUsers').post(checkAdmin, controller.addNewUsers) // add new users
-router
-    .route('/users/instances')
-    .post(checkInsMongoId, controller.addNewInstance) // create new instance user wise
-router
-    .route('/users/instancesList')
-    .get(checkInsMongoId, controller.instanceList) // get all instances by user
-router
-    .route('/users/deleteInstance')
-    .post(checkInsMongoId, controller.deleteInstanceId) // delete instance by user
+router.route('/users/instances').post(checkInsMongoId, controller.addNewInstance) // create new instance user wise
+router.route('/users/instancesList').get(checkInsMongoId, controller.instanceList) // get all instances by user
+router.route('/users/deleteInstance').post(checkInsMongoId, controller.deleteInstanceId) // delete instance by user
 router.route('/dashboard').get(checkCookies, controller.redirectByRole)
 router.get('/register', (req, res) => {
     res.render('register', { query: req.query })
@@ -88,50 +74,17 @@ router.get('/templateschedule', checkCookies, (req, res) => {
     })
 })
 router.get('/message-templates', checkCookies, messageTemplateController.list)
-router.post(
-    '/message-templates',
-    checkCookies,
-    messageTemplateController.create
-)
-router.put(
-    '/message-templates/:id',
-    checkCookies,
-    messageTemplateController.update
-)
-router.delete(
-    '/message-templates/:id',
-    checkCookies,
-    messageTemplateController.remove
-)
-router.get(
-    '/template-scheduled-messages',
-    checkCookies,
-    templateScheduledMessageController.list
-)
-router.post(
-    '/template-scheduled-messages',
-    checkCookies,
-    templateScheduledMessageController.create
-)
-router.get(
-    '/template-scheduled-messages/:id',
-    checkCookies,
-    templateScheduledMessageController.details
-)
-router.put(
-    '/template-scheduled-messages/:id',
-    checkCookies,
-    templateScheduledMessageController.update
-)
-router.delete(
-    '/template-scheduled-messages/:id',
-    checkCookies,
-    templateScheduledMessageController.remove
-)
+router.post('/message-templates', checkCookies, messageTemplateController.create)
+router.put('/message-templates/:id', checkCookies, messageTemplateController.update)
+router.delete('/message-templates/:id', checkCookies, messageTemplateController.remove)
+router.get('/template-scheduled-messages', checkCookies, templateScheduledMessageController.list)
+router.post('/template-scheduled-messages', checkCookies, templateScheduledMessageController.create)
+router.get('/template-scheduled-messages/:id', checkCookies, templateScheduledMessageController.details)
+router.put('/template-scheduled-messages/:id', checkCookies, templateScheduledMessageController.update)
+router.delete('/template-scheduled-messages/:id', checkCookies, templateScheduledMessageController.remove)
 router.get('/groups', checkCookies, (req, res) => {
     return res.render('user/groups', {
-        user: req.user,
-        page: 'user/groups',
+        user: req.user, page: 'user/groups',
     })
 })
 router.get('/groups/data', checkCookies, groupController.getOwnedGroups)
@@ -141,37 +94,13 @@ router.get('/number-checker', checkCookies, (req, res) => {
         page: 'user/number-checker',
     })
 })
-router.post(
-    '/number-checker',
-    checkCookies,
-    numberCheckerController.checkNumbers
-)
+router.post('/number-checker', checkCookies, numberCheckerController.checkNumbers)
 router.get('/scheduled-messages', checkCookies, scheduledMessageController.list)
-router.post(
-    '/scheduled-messages',
-    checkCookies,
-    scheduledMessageController.create
-)
-router.get(
-    '/scheduled-messages/:id',
-    checkCookies,
-    scheduledMessageController.details
-)
-router.put(
-    '/scheduled-messages/:id',
-    checkCookies,
-    scheduledMessageController.update
-)
-router.post(
-    '/scheduled-messages/:id/cancel',
-    checkCookies,
-    scheduledMessageController.cancel
-)
-router.delete(
-    '/scheduled-messages/:id',
-    checkCookies,
-    scheduledMessageController.remove
-)
+router.post('/scheduled-messages', checkCookies, scheduledMessageController.create)
+router.get('/scheduled-messages/:id', checkCookies, scheduledMessageController.details)
+router.put('/scheduled-messages/:id', checkCookies, scheduledMessageController.update)
+router.post('/scheduled-messages/:id/cancel', checkCookies, scheduledMessageController.cancel)
+router.delete('/scheduled-messages/:id', checkCookies, scheduledMessageController.remove)
 
 /**pages */
 router.get('/settings', checkCookies, (req, res) => {
@@ -193,13 +122,9 @@ router.route('/messages/media').post(controller.createMessagesMedia)
 // Route to get messages by Token_Id
 router.route('/messages/:tokenId').get(controller.getMessagesByInstance)
 // Delete single message
-router
-    .route('/messages/delete/:tokenId/:messageId')
-    .delete(controller.deleteMessage)
+router.route('/messages/delete/:tokenId/:messageId').delete(controller.deleteMessage)
 // Delete all messages by token
-router
-    .route('/messages/deleteAll/:tokenId')
-    .delete(controller.deleteAllMessages)
+router.route('/messages/deleteAll/:tokenId').delete(controller.deleteAllMessages)
 // route create delay fro message sendiong data
 router.route('/set_delay').post(checkCookies, controller.instanceSendToDelay)
 
