@@ -53,6 +53,9 @@ async function queueCampaign(campaign) {
                             : {
                                 type: campaign.type,
                                 url: campaign.url,
+                                base64: campaign.fileData,
+                                filename: campaign.filename,
+                                mimetype: campaign.mimetype,
                                 options: {
                                     caption: recipient.message || campaign.caption,
                                     delay: 0,

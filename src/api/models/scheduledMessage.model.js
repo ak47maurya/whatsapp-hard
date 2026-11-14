@@ -23,7 +23,11 @@ const scheduledMessageSchema = new mongoose.Schema({
     templateBody: { type: String, default: '' },
     message: { type: String, default: '' },
     type: { type: String, enum: ['text', 'image', 'video', 'audio', 'document'], required: true },
+    source: { type: String, enum: ['url', 'upload'], default: 'url' },
     url: { type: String, default: '' },
+    fileData: { type: String, default: '' },
+    filename: { type: String, default: '' },
+    mimetype: { type: String, default: '' },
     caption: { type: String, default: '' },
     scheduledAt: { type: Date, required: true, index: true },
     status: {

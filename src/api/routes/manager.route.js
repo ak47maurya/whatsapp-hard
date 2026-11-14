@@ -6,14 +6,34 @@ const messageTemplateController = require('../controllers/messageTemplate.contro
 const templateScheduledMessageController = require('../controllers/templateScheduledMessage.controller')
 const numberCheckerController = require('../controllers/numberChecker.controller')
 const planController = require('../controllers/plan.controller')
+const multer = require('multer')
 const { checkCookies, checkInsMongoId, checkAdmin, } = require('../middlewares/checkCookies')
 
 const router = express.Router()
+const mediaUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 8 * 1024 * 1024 },
+}).single('file')
+
+function handleMediaUpload(req, res, next) {
+    mediaUpload(req, res, error => {
+        if (error) {
+            return res.status(400).json({
+                error: true,
+                message: error.code === 'LIMIT_FILE_SIZE'
+                    ? 'Media files must be 8 MB or smaller.'
+                    : 'Unable to read the uploaded media file.',
+            })
+        }
+        return next()
+    })
+}
 
 router.get('/getallgroupswithmembers', checkCookies, groupController.getAllGroupsWithParticipants)
 
 // Admin User Data
 router.route('/users').get(checkAdmin, controller.users) // get All users
+router.route('/users/:id/plan').put(checkAdmin, controller.updateUserPlan)
 router.route('/users/:id').put(checkAdmin, controller.updateUser) // put for update
 router.route('/users/:id').delete(checkAdmin, controller.deleteUser) // delete for delete
 router.get('/plans', checkCookies, planController.adminPage)
@@ -73,9 +93,21 @@ router.get('/templateschedule', checkCookies, (req, res) => {
         page: 'user/templateschedule',
     })
 })
+router.get('/templates', checkCookies, (req, res) => {
+    return res.render('user/templates', {
+        user: req.user,
+        page: 'user/templates',
+    })
+})
+router.get('/create-message', checkCookies, (req, res) => {
+    return res.render('user/create-message', {
+        user: req.user,
+        page: 'user/create-message',
+    })
+})
 router.get('/message-templates', checkCookies, messageTemplateController.list)
-router.post('/message-templates', checkCookies, messageTemplateController.create)
-router.put('/message-templates/:id', checkCookies, messageTemplateController.update)
+router.post('/message-templates', checkCookies, handleMediaUpload, messageTemplateController.create)
+router.put('/message-templates/:id', checkCookies, handleMediaUpload, messageTemplateController.update)
 router.delete('/message-templates/:id', checkCookies, messageTemplateController.remove)
 router.get('/template-scheduled-messages', checkCookies, templateScheduledMessageController.list)
 router.post('/template-scheduled-messages', checkCookies, templateScheduledMessageController.create)
@@ -96,9 +128,9 @@ router.get('/number-checker', checkCookies, (req, res) => {
 })
 router.post('/number-checker', checkCookies, numberCheckerController.checkNumbers)
 router.get('/scheduled-messages', checkCookies, scheduledMessageController.list)
-router.post('/scheduled-messages', checkCookies, scheduledMessageController.create)
+router.post('/scheduled-messages', checkCookies, handleMediaUpload, scheduledMessageController.create)
 router.get('/scheduled-messages/:id', checkCookies, scheduledMessageController.details)
-router.put('/scheduled-messages/:id', checkCookies, scheduledMessageController.update)
+router.put('/scheduled-messages/:id', checkCookies, handleMediaUpload, scheduledMessageController.update)
 router.post('/scheduled-messages/:id/cancel', checkCookies, scheduledMessageController.cancel)
 router.delete('/scheduled-messages/:id', checkCookies, scheduledMessageController.remove)
 

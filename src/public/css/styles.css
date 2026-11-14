@@ -83,6 +83,10 @@ body {
     font-weight: 800;
 }
 
+.brand-mark {
+    object-fit: contain;
+}
+
 .user-layout .sidebar {
     display: block;
     position: sticky;
@@ -152,6 +156,37 @@ body {
     background: #fff;
     border-top: 1px solid var(--line);
     color: var(--ink-soft);
+}
+
+.composer-form .form-label {
+    margin-bottom: 0.4rem;
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.composer-form .form-control,
+.composer-form .form-select {
+    min-height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background-color: #fffdf7;
+    color: var(--ink);
+    font: inherit;
+}
+
+.composer-form textarea.form-control {
+    min-height: 0;
+}
+
+.composer-form .form-control:focus,
+.composer-form .form-select:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 0.2rem rgba(201, 162, 39, 0.15);
+}
+
+.composer-form .form-text {
+    color: var(--ink-soft);
+    font-size: 0.875rem;
 }
 
 @media (max-width: 991.98px) {
@@ -289,11 +324,6 @@ a:hover {
     padding: 15px;
     width: 300px;
     box-shadow: 0 12px 30px rgba(201, 162, 39, 0.14);
-    transition: transform 0.2s;
-}
-
-.card:hover {
-    transform: scale(1.05);
 }
 
 .card-title {
@@ -370,9 +400,40 @@ a:hover {
 /* Table styling */
 table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     font-family: Arial, sans-serif;
     font-size: 14px;
+}
+
+.table-responsive {
+    max-height: 60vh;
+    overflow: auto;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: var(--gold-soft);
+}
+
+.table-hover > tbody > tr:hover > * {
+    --bs-table-bg-state: transparent;
+    --bs-table-color-state: inherit;
+}
+
+.table .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-height: 30px;
+    margin: 2px;
+    padding: 5px 10px;
+    font-size: 13px;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 /* Table headers */

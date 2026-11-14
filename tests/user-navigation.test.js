@@ -35,6 +35,8 @@ describe('user navigation', () => {
             'settings',
             'reports',
             'schedule',
+            'create-message',
+            'templates',
             'templateschedule',
             'groups',
             'number-checker',

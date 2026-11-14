@@ -1,15 +1,13 @@
 const Message = require('../models/message.model.js')
 const User = require('../models/user.model.js')
+const {
+    getInstanceDelayRange,
+    getRandomMessageDelay,
+} = require('../helper/messageDelay')
 // Use global WhatsAppInstances (set in express.js)
 const WhatsAppInstances = global.WhatsAppInstances
 
-const MIN_DELAY = 10
-const MAX_DELAY = 20
 const CHECK_INTERVAL = 5000
-
-function getRandomDelay() {
-    return Math.floor(Math.random() * (MAX_DELAY - MIN_DELAY + 1)) + MIN_DELAY
-}
 
 async function sendMessage(message) {
     try {
@@ -18,12 +16,12 @@ async function sendMessage(message) {
         const delay = message.options?.delay || 0
         let data
 
-        if (message.url && message.type === 'url') {
+        if (message.url) {
             data = await WhatsAppInstances[tokenId].sendMediaFile(
                 message,
                 'url'
             )
-        } else if (message.base64 && message.type === 'base64') {
+        } else if (message.base64) {
             data = await WhatsAppInstances[tokenId].sendMediaFile(
                 message,
                 'base64'
@@ -66,7 +64,9 @@ async function processNextMessage(instanceId) {
 async function processInstance(instanceId) {
     const hasMore = await processNextMessage(instanceId)
     if (hasMore) {
-        const delaySeconds = getRandomDelay()
+        const user = await User.findOne({ 'insdetails.Token_Id': instanceId })
+        const { minDelay, maxDelay } = getInstanceDelayRange(user, instanceId)
+        const delaySeconds = getRandomMessageDelay(minDelay, maxDelay)
         console.log(`Waiting ${delaySeconds} seconds before next message...`)
         await new Promise((resolve) => setTimeout(resolve, delaySeconds * 1000))
         await processInstance(instanceId)

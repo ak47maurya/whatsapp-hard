@@ -1110,10 +1110,9 @@ class WhatsAppInstance {
 			await this.verifyGroup(to);
 		}
 
-		let caption = '';
-		if (data.options && data.options.caption) {
-			caption = data.options.caption;
-		}
+		const caption = data.caption || data.options?.caption || '';
+		const sendDelay = data.options?.delay || data.delay || 0;
+		const replyFrom = data.options?.replyFrom || data.replyFrom || '';
 
 		let mentions = false;
 
@@ -1134,8 +1133,8 @@ class WhatsAppInstance {
 			cache = { useCachedGroupMetadata: meta };
 		}
 
-		if (data.options && data.options.replyFrom) {
-			const msg = await this.getMessage(data.options.replyFrom, to);
+		if (replyFrom) {
+			const msg = await this.getMessage(replyFrom, to);
 
 			if (msg) {
 				quoted = { quoted: msg };
@@ -1173,6 +1172,41 @@ class WhatsAppInstance {
 			myArray = config.audioMimeTypes;
 		} else {
 			myArray = config.documentMimeTypes;
+		}
+
+		if (origem === 'file') {
+			if (!Buffer.isBuffer(data.file?.buffer)) {
+				throw new Error('Uploaded media file is missing.');
+			}
+			file = data.file.buffer;
+			type = file;
+			filename = data.file.originalname || data.filename || 'file';
+			mimetype = (data.file.mimetype || data.mimetype || '').toLowerCase();
+		} else if (origem === 'base64') {
+			if (!data.base64 || !data.filename) {
+				throw new Error('Base64 media requires file content and a filename.');
+			}
+			const base64Data = String(data.base64);
+			const separator = base64Data.startsWith('data:')
+				? base64Data.indexOf(',')
+				: -1;
+			const encodedData = separator >= 0
+				? base64Data.slice(separator + 1)
+				: base64Data;
+			file = Buffer.from(encodedData, 'base64');
+			if (!file.length) {
+				throw new Error('Base64 media content is empty or invalid.');
+			}
+			type = file;
+			filename = data.filename;
+			mimetype = (data.mimetype || getMIMEType.lookup(filename) || '')
+				.split(';')[0]
+				.trim()
+				.toLowerCase();
+		}
+
+		if (['file', 'base64'].includes(origem) && !myArray.includes(mimetype)) {
+			throw new Error(`File ${mimetype || 'unknown'} is not allowed for ${data.type}`);
 		}
 
 		if (origem === 'url') {
@@ -1235,25 +1269,13 @@ class WhatsAppInstance {
 					origem = data.url;
 				}
 			}
-		} else if (origem === 'base64') {
-			if (!data.filename || data.filename === '') { throw new Error('File name is required.'); }
-
-			mimetype = getMIMEType.lookup(data.filename);
-
-			if (!myArray.includes(mimetype.trim())) {
-				throw new Error('File ' + mimetype + ' is not allowed for ' + data.type);
-			}
-
-
 		}
 
 		if (data.type === 'audio') {
-			if (mimetype === 'audio/ogg') {
-				if (data.options && data.options.delay) {
-					if (data.options.delay > 0) {
+			if (mimetype === 'audio/ogg' && origem === 'url') {
+				if (sendDelay > 0) {
 						await this.instance.sock?.sendPresenceUpdate('recording', to);
-						await delay(data.options.delay * 1000);
-					}
+						await delay(sendDelay * 1000);
 				}
 
 				type = {
@@ -1262,50 +1284,36 @@ class WhatsAppInstance {
 				mimetype = 'audio/mp4';
 				filename = await this.getFileNameFromUrl(data.url);
 			} else {
-				audio = await this.convertToMP4(origem);
+				audio = await this.convertToMP4(
+					origem === 'url' ? data.url : file
+				);
 				mimetype = 'audio/mp4';
 				type = await fs.readFile(audio);
-				if (data.options && data.options.delay) {
-					if (data.options.delay > 0) {
+				if (sendDelay > 0) {
 						await this.instance.sock?.sendPresenceUpdate('recording', to);
-						await delay(data.options.delay * 1000);
-					}
+						await delay(sendDelay * 1000);
 				}
 			}
 		} else if (data.type === 'video') {
-			if (mimetype === 'video/mp4') {
+			if (mimetype === 'video/mp4' && origem === 'url') {
 				type = {
 					url: data.url,
 				};
 				thumb = await this.thumbURL(data.url);
 				filename = await this.getFileNameFromUrl(data.url);
 			} else {
-				video = await this.convertTovideoMP4(origem);
+				video = await this.convertTovideoMP4(
+					origem === 'url' ? data.url : file
+				);
 				mimetype = 'video/mp4';
 				type = await fs.readFile(video);
 				thumb = await this.thumbBUFFER(video);
 			}
 		} else {
 
-			if (!data.base64) {
-				if (!((data.type === 'document' || data.type === 'image') && Buffer.isBuffer(type))) {
-					type = {
-						url: data.url,
-					};
-
-					filename = await this.getFileNameFromUrl(data.url, mimetype, data.type);
-				}
-			}
-			else {
-
-				const buffer = Buffer.from(data.base64, 'base64');
-
-				filename = data.filename || 'file';
-				const tempFile = path.join('temp/', filename);
-
-				await fs.writeFile(tempFile, buffer);
-				type = await fs.readFile(tempFile);
-
+			if (origem === 'url' && !Buffer.isBuffer(type)) {
+				type = { url: data.url };
+				filename = await this.getFileNameFromUrl(data.url, mimetype, data.type);
 			}
 		}
 

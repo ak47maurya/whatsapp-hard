@@ -1,8 +1,11 @@
 const mongoose = require('mongoose')
 const { URL } = require('url')
+const config = require('../../config/config')
 const MessageTemplate = require('../models/messageTemplate.model')
 const ScheduledMessage = require('../models/scheduledMessage.model')
 const { isPlanExpired } = require('../helper/planAccess')
+
+const MAX_MEDIA_BYTES = 8 * 1024 * 1024
 
 function validateTemplate(body = {}) {
     const name = String(body.name || '').trim()
@@ -10,12 +13,19 @@ function validateTemplate(body = {}) {
     const templateBody = String(body.body || '').trim()
     const caption = String(body.caption || '').trim()
     const url = String(body.url || '').trim()
+    const source = type === 'text' ? 'url' : body.source || 'url'
+    const fileData = String(body.fileData || '')
+    const filename = String(body.filename || '').trim()
+    const mimetype = String(body.mimetype || '').split(';')[0].trim().toLowerCase()
     if (!name || name.length > 100)
         return {
             error: 'Template name is required and must be under 100 characters.',
         }
-    if (!['text', 'image', 'document'].includes(type)) {
+    if (!['text', 'image', 'video', 'audio', 'document'].includes(type)) {
         return { error: 'Select a valid template type.' }
+    }
+    if (!['url', 'upload'].includes(source)) {
+        return { error: 'Select a valid media source.' }
     }
     if (type === 'text' && (!templateBody || templateBody.length > 4000)) {
         return {
@@ -25,15 +35,33 @@ function validateTemplate(body = {}) {
     if (type !== 'text' && caption.length > 1000) {
         return { error: 'Media caption must be under 1,000 characters.' }
     }
-    if (type !== 'text') {
+    if (type !== 'text' && source === 'url') {
         try {
             const mediaUrl = new URL(url)
             if (!['http:', 'https:'].includes(mediaUrl.protocol))
                 throw new Error('Invalid protocol')
         } catch {
             return {
-                error: 'Image and document templates require a valid http or https media URL.',
+                error: 'Media templates require a valid http or https media URL.',
             }
+        }
+    }
+    if (type !== 'text' && source === 'upload') {
+        if (!fileData || !filename || !mimetype) {
+            return { error: 'Upload a media file to use this template.' }
+        }
+        const bytes = Buffer.byteLength(fileData, 'base64')
+        if (bytes > MAX_MEDIA_BYTES) {
+            return { error: 'Template media files must be 8 MB or smaller.' }
+        }
+        const allowedTypes = {
+            image: config.imageMimeTypes,
+            video: config.videoMimeTypes,
+            audio: config.audioMimeTypes,
+            document: config.documentMimeTypes,
+        }[type] || []
+        if (!allowedTypes.includes(mimetype)) {
+            return { error: `The uploaded file type is not supported for ${type}.` }
         }
     }
 
@@ -76,7 +104,11 @@ function validateTemplate(body = {}) {
             name,
             type,
             body: type === 'text' ? templateBody : '',
-            url: type === 'text' ? '' : url,
+            source,
+            url: type === 'text' || source === 'upload' ? '' : url,
+            fileData: type !== 'text' && source === 'upload' ? fileData : '',
+            filename: type !== 'text' && source === 'upload' ? filename : '',
+            mimetype: type !== 'text' && source === 'upload' ? mimetype : '',
             caption: type === 'text' ? '' : caption,
             variables,
         },
@@ -93,7 +125,13 @@ exports.list = async (req, res) => {
             .sort({ updatedAt: -1 })
             .limit(100)
             .lean()
-        return res.json({ error: false, data: templates })
+        return res.json({
+            error: false,
+            data: templates.map(template => {
+                const { fileData, ...metadata } = template
+                return { ...metadata, hasUpload: Boolean(fileData) }
+            }),
+        })
     } catch (error) {
         console.error('Failed to list message templates:', error.message)
         return res
@@ -107,7 +145,14 @@ exports.create = async (req, res) => {
         const expired = planError(req.user)
         if (expired)
             return res.status(403).json({ error: true, message: expired })
-        const validated = validateTemplate(req.body)
+        const body = { ...req.body }
+        if (req.file) {
+            body.source = 'upload'
+            body.fileData = req.file.buffer.toString('base64')
+            body.filename = req.file.originalname
+            body.mimetype = req.file.mimetype
+        }
+        const validated = validateTemplate(body)
         if (validated.error)
             return res
                 .status(400)
@@ -117,7 +162,11 @@ exports.create = async (req, res) => {
             ownerId: req.user._id,
             ...validated.data,
         })
-        return res.status(201).json({ error: false, data: template })
+        const { fileData, ...metadata } = template.toObject()
+        return res.status(201).json({
+            error: false,
+            data: { ...metadata, hasUpload: Boolean(fileData) },
+        })
     } catch (error) {
         if (error.code === 11000) {
             return res.status(409).json({
@@ -143,22 +192,43 @@ exports.update = async (req, res) => {
                 .status(404)
                 .json({ error: true, message: 'Message template not found.' })
         }
-        const validated = validateTemplate(req.body)
+        const existing = await MessageTemplate.findOne({
+            _id: req.params.id,
+            ownerId: req.user._id,
+        })
+        if (!existing)
+            return res
+                .status(404)
+                .json({ error: true, message: 'Message template not found.' })
+
+        const body = { ...req.body }
+        if (req.file) {
+            body.source = 'upload'
+            body.fileData = req.file.buffer.toString('base64')
+            body.filename = req.file.originalname
+            body.mimetype = req.file.mimetype
+        } else if (body.source === 'upload' && existing.fileData) {
+            body.fileData = existing.fileData
+            body.filename = existing.filename
+            body.mimetype = existing.mimetype
+        }
+        const validated = validateTemplate(body)
         if (validated.error)
             return res
                 .status(400)
                 .json({ error: true, message: validated.error })
 
-        const template = await MessageTemplate.findOneAndUpdate(
-            { _id: req.params.id, ownerId: req.user._id },
-            { $set: validated.data },
-            { new: true, runValidators: true }
-        )
+        Object.assign(existing, validated.data)
+        const template = await existing.save()
         if (!template)
             return res
                 .status(404)
                 .json({ error: true, message: 'Message template not found.' })
-        return res.json({ error: false, data: template })
+        const { fileData, ...metadata } = template.toObject()
+        return res.json({
+            error: false,
+            data: { ...metadata, hasUpload: Boolean(fileData) },
+        })
     } catch (error) {
         if (error.code === 11000) {
             return res.status(409).json({

@@ -3,9 +3,13 @@ const mongoose = require('mongoose')
 const messageTemplateSchema = new mongoose.Schema({
     ownerId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
     name: { type: String, required: true, trim: true, maxlength: 100 },
-    type: { type: String, enum: ['text', 'image', 'document'], default: 'text' },
+    type: { type: String, enum: ['text', 'image', 'video', 'audio', 'document'], default: 'text' },
+    source: { type: String, enum: ['url', 'upload'], default: 'url' },
     body: { type: String, default: '', maxlength: 4000 },
     url: { type: String, default: '' },
+    fileData: { type: String, default: '' },
+    filename: { type: String, default: '' },
+    mimetype: { type: String, default: '' },
     caption: { type: String, default: '', maxlength: 1000 },
     variables: { type: [String], default: [] },
 }, { timestamps: true })

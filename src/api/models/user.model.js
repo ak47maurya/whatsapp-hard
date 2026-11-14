@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const instanceDetailsSchema = new mongoose.Schema({
     Token_Id: { type: String, required: true },
     toDelay: { type: String },
-    minDelay: { type: Number, default: 10 },
+    minDelay: { type: Number, default: 15 },
     maxDelay: { type: Number, default: 20 },
     _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
 })

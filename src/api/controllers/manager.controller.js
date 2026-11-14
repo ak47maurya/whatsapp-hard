@@ -7,6 +7,11 @@ const axios = require('axios');
 const { enforcePlanExpiry } = require('../helper/planAccess');
 const Plan = require('../models/plan.model');
 const { ensureDefaultPlans, getDailyUsage, getUserPlan } = require('../helper/plans');
+const {
+    DEFAULT_MIN_DELAY_SECONDS,
+    DEFAULT_MAX_DELAY_SECONDS,
+    MAX_DELAY_SECONDS,
+} = require('../helper/messageDelay');
 
 const MONGODB_RETRY_DELAY = 5000;
 let mongoConnectionPending = false;
@@ -284,6 +289,60 @@ exports.updateUser = async (req, res) => {
     }
 }
 
+exports.updateUserPlan = async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(404).json({ error: 'User not found.' })
+        }
+        if (!mongoose.Types.ObjectId.isValid(req.body.planId)) {
+            return res.status(400).json({ error: 'Select a valid plan.' })
+        }
+        const existingUser = await UserService.getUserById(req.params.id)
+        const selectedPlan = await Plan.findOne({
+            _id: req.body.planId,
+            active: true,
+        })
+        if (!selectedPlan) {
+            return res.status(400).json({ error: 'Select an active plan.' })
+        }
+
+        const startDate = new Date(req.body.startDate)
+        const endDate = new Date(req.body.endDate)
+        if (
+            !Number.isFinite(startDate.getTime()) ||
+            !Number.isFinite(endDate.getTime()) ||
+            endDate <= startDate
+        ) {
+            return res
+                .status(400)
+                .json({ error: 'Enter a valid plan start and end date.' })
+        }
+        const allowedStatuses = ['Trial', 'Active', 'Expired', 'Suspended']
+        if (!allowedStatuses.includes(req.body.planStatus)) {
+            return res.status(400).json({ error: 'Select a valid plan status.' })
+        }
+
+        const updates = {
+            planId: selectedPlan._id,
+            planType: selectedPlan.name,
+            manyInstance: selectedPlan.manyInstance,
+            startDate,
+            endDate,
+            planStatus: req.body.planStatus,
+        }
+        if (String(existingUser.planId || '') !== String(selectedPlan._id)) {
+            updates.planRecipientNumbers = []
+            updates.planSentRecipientNumbers = []
+        }
+        await UserService.updateUser(req.params.id, updates)
+        return res
+            .status(200)
+            .json({ error: false, message: 'User plan updated.' })
+    } catch (error) {
+        return res.status(400).json({ error: error.message })
+    }
+}
+
 // Delete a user (DELETE) by admin
 exports.deleteUser = async (req, res) => {
     try {
@@ -308,7 +367,25 @@ exports.addNewInstance = async (req, res) => {
         if (!instanceData.key) {
             return res.status(400).json({ message: "Key is required" });
         }
-        const userKey = { Token_Id: instanceData.key };
+        const minDelay = Number(instanceData.minDelay ?? DEFAULT_MIN_DELAY_SECONDS);
+        const maxDelay = Number(instanceData.maxDelay ?? DEFAULT_MAX_DELAY_SECONDS);
+        if (
+            !Number.isInteger(minDelay) ||
+            !Number.isInteger(maxDelay) ||
+            minDelay < 1 ||
+            maxDelay < minDelay ||
+            maxDelay > MAX_DELAY_SECONDS
+        ) {
+            return res.status(400).json({
+                error: true,
+                message: `Message delay must be between 1 and ${MAX_DELAY_SECONDS} seconds, and the maximum must not be less than the minimum.`,
+            });
+        }
+        const userKey = {
+            Token_Id: instanceData.key,
+            minDelay,
+            maxDelay,
+        };
         const plan = await getUserPlan(user);
         if (user.insdetails.length >= plan.manyInstance) {
             return res.status(501).json({ message: "Limit reached! Cannot add more instances." });

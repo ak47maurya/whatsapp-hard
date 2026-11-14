@@ -241,7 +241,11 @@ exports.details = async (req, res) => {
                 .json({ error: true, message: 'Template schedule not found.' })
         return res.json({
             error: false,
-            data: { ...campaign, counts: getCounts(campaign.recipients) },
+            data: {
+                ...campaign,
+                fileData: undefined,
+                counts: getCounts(campaign.recipients),
+            },
         })
     } catch (error) {
         console.error('Failed to load template schedule:', error.message)
@@ -309,14 +313,22 @@ exports.create = async (req, res) => {
             ...validated.data,
             recipients: recipientValidation.data,
             type: template.type,
+            source: template.source || 'url',
             message: template.body,
             url: template.url,
+            fileData: template.fileData,
+            filename: template.filename,
+            mimetype: template.mimetype,
             caption: template.caption,
             templateId: template._id,
             templateName: template.name,
             templateBody: template.body,
         })
-        return res.status(201).json({ error: false, data: campaign })
+        const { fileData, ...campaignDetails } = campaign.toObject()
+        return res.status(201).json({
+            error: false,
+            data: { ...campaignDetails, hasUpload: Boolean(fileData) },
+        })
     } catch (error) {
         if (reservedNumbers.length) {
             try {
@@ -441,8 +453,12 @@ exports.update = async (req, res) => {
                     ...validated.data,
                     recipients,
                     type: template.type,
+                    source: template.source || 'url',
                     message: template.body,
                     url: template.url,
+                    fileData: template.fileData,
+                    filename: template.filename,
+                    mimetype: template.mimetype,
                     caption: template.caption,
                     templateId: template._id,
                     templateName: template.name,
@@ -470,10 +486,11 @@ exports.update = async (req, res) => {
                 .filter((number) => !updatedNumbers.has(number)),
             campaign._id
         )
+        const { fileData, ...campaignDetails } = updated.toObject()
         return res.json({
             error: false,
             message: 'Template schedule updated.',
-            data: updated,
+            data: { ...campaignDetails, hasUpload: Boolean(fileData) },
         })
     } catch (error) {
         if (

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create Message — AK Automations</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="user-layout">
+    <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/manager/dashboard">
+                <%- include('../partials/brand-mark', { size: 38 }) %>
+                <span>AK Automations</span>
+            </a>
+            <div class="d-flex align-items-center gap-3 ms-auto">
+                <span class="text-white-50 small d-none d-md-inline">Welcome, <strong><%= user.username %></strong></span>
+                <a class="btn btn-light btn-sm rounded-pill px-3 d-none d-md-inline-flex" href="/manager/logout">Logout</a>
+                <button class="navbar-toggler d-lg-none" type="button" id="userSidebarToggle" aria-label="Open navigation menu" aria-controls="userSidebar" aria-expanded="false">
+                    <i class="fa-solid fa-bars text-white"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <div class="user-sidebar-overlay" id="userSidebarOverlay"></div>
+    <div class="container-fluid user-app">
+        <div class="row gx-0">
+            <nav class="col-md-3 col-lg-2 sidebar" id="userSidebar" aria-label="Main navigation">
+                <div class="position-sticky pt-4 px-3">
+                    <div class="text-center mb-4 pb-3 border-bottom">
+                        <%- include('../partials/brand-mark', { size: 50 }) %>
+                        <h6 class="mb-0 fw-bold text-uppercase small">User Panel</h6>
+                    </div>
+                    <%- include('partials/sidebar-navigation', { activePage: 'create-message' }) %>
+                </div>
+            </nav>
+            <main class="col-md-9 col-lg-10 px-3 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap align-items-center pb-2 mb-4 border-bottom">
+                    <div>
+                        <h2 class="fw-bold text-dark mb-1">Create Message</h2>
+                        <small class="text-muted">Send one message to multiple numbers separated by commas.</small>
+                    </div>
+                    <a class="btn btn-outline-success rounded-pill mt-2 mt-md-0" href="/manager/helps">
+                        <i class="fa-solid fa-code me-1"></i> API Help
+                    </a>
+                </div>
+                <div class="alert alert-info py-2" id="planLimitsNotice">Loading plan limits…</div>
+                <section class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-3 p-md-4">
+                        <form id="messageForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="messageInstance" class="form-label fw-semibold">WhatsApp instance</label>
+                                    <select class="form-select" id="messageInstance" required>
+                                        <option value="">Select an instance</option>
+                                        <% (user.insdetails || []).forEach(instance => { %><option value="<%= instance.Token_Id %>"><%= instance.Token_Id %></option><% }) %>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="messageType" class="form-label fw-semibold">Message type</label>
+                                    <select class="form-select" id="messageType">
+                                        <option value="text">Text</option>
+                                        <option value="image">Image</option>
+                                        <option value="video">Video</option>
+                                        <option value="audio">Audio</option>
+                                        <option value="document">Document</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label for="recipients" class="form-label fw-semibold">Recipient numbers</label>
+                                    <textarea class="form-control" id="recipients" rows="3" required placeholder="+919876543210, +911234567890"></textarea>
+                                    <div class="form-text">Include the country code. Separate numbers with commas or new lines.</div>
+                                </div>
+                                <div class="col-12" id="textMessageField">
+                                    <label for="messageText" class="form-label fw-semibold">Message</label>
+                                    <textarea class="form-control" id="messageText" rows="4" maxlength="4000" placeholder="Type your message"></textarea>
+                                </div>
+                                <div class="col-md-6 d-none" id="mediaSourceField">
+                                    <label for="mediaSource" class="form-label fw-semibold">Media source</label>
+                                    <select class="form-select" id="mediaSource">
+                                        <option value="upload">Upload a file</option>
+                                        <option value="url">Use a public URL</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 d-none" id="mediaFileField">
+                                    <label for="mediaFile" class="form-label fw-semibold">File</label>
+                                    <input class="form-control" id="mediaFile" type="file">
+                                </div>
+                                <div class="col-md-6 d-none" id="mediaUrlField">
+                                    <label for="mediaUrl" class="form-label fw-semibold">Public media URL</label>
+                                    <input class="form-control" id="mediaUrl" type="url" placeholder="https://example.com/media.mp4">
+                                </div>
+                                <div class="col-12 d-none" id="captionField">
+                                    <label for="mediaCaption" class="form-label fw-semibold">Caption (optional)</label>
+                                    <textarea class="form-control" id="mediaCaption" rows="2" maxlength="1000" placeholder="Add a caption"></textarea>
+                                </div>
+                                <div class="col-12 d-flex align-items-center gap-3">
+                                    <button class="btn btn-gold rounded-pill px-4" id="sendMessages" type="submit">
+                                        <i class="fa-solid fa-paper-plane me-1"></i> Queue messages
+                                    </button>
+                                    <span class="small text-muted" id="sendProgress" aria-live="polite"></span>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+                <div class="alert d-none" id="sendResult" role="status" aria-live="polite"></div>
+                <%- include('partials/footer') %>
+            </main>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="/js/user-navigation.js"></script>
+    <script>
+        const messageType = document.getElementById('messageType');
+        const mediaSource = document.getElementById('mediaSource');
+        const mediaFile = document.getElementById('mediaFile');
+        const mediaUrl = document.getElementById('mediaUrl');
+        let maxRecipients = 500;
+        let dailyMessagesRemaining = null;
+
+        function updateMessageFields() {
+            const isText = messageType.value === 'text';
+            const isUrl = mediaSource.value === 'url';
+            document.getElementById('textMessageField').classList.toggle('d-none', !isText);
+            document.getElementById('mediaSourceField').classList.toggle('d-none', isText);
+            document.getElementById('mediaFileField').classList.toggle('d-none', isText || isUrl);
+            document.getElementById('mediaUrlField').classList.toggle('d-none', isText || !isUrl);
+            document.getElementById('captionField').classList.toggle('d-none', isText);
+            document.getElementById('messageText').required = isText;
+            mediaFile.required = !isText && !isUrl;
+            mediaUrl.required = !isText && isUrl;
+            const acceptedTypes = {
+                image: 'image/*',
+                video: 'video/*',
+                audio: 'audio/*',
+                document: '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip'
+            };
+            mediaFile.accept = acceptedTypes[messageType.value] || '';
+        }
+
+        async function loadPlanLimits() {
+            const response = await fetch('/manager/plan-summary');
+            const result = await response.json();
+            if (!response.ok || result.error) throw new Error(result.message || 'Plan limits load nahi ho sake.');
+            const plan = result.data;
+            maxRecipients = plan.maxRecipientsPerCampaign;
+            dailyMessagesRemaining = plan.dailyMessagesRemaining;
+            const daily = plan.dailyMessageLimit
+                ? `${plan.dailyMessagesSent + plan.dailyMessagesReserved}/${plan.dailyMessageLimit} messages used today`
+                : 'no daily message cap';
+            const contacts = plan.maxUniqueRecipients < 0
+                ? 'unlimited unique contacts'
+                : `${plan.uniqueRecipientsUsed}/${plan.maxUniqueRecipients} unique contacts used`;
+            document.getElementById('planLimitsNotice').textContent =
+                `${plan.name}: up to ${maxRecipients} recipients per send; ${daily}; ${contacts}.`;
+        }
+
+        function getRecipients() {
+            const rawNumbers = document.getElementById('recipients').value
+                .split(/[,\r\n;]+/)
+                .map(value => value.trim())
+                .filter(Boolean);
+            if (!rawNumbers.length) throw new Error('Enter at least one recipient number.');
+            const seen = new Set();
+            return rawNumbers.map((raw, index) => {
+                if (!/^\+?[\d\s()-]+$/.test(raw)) throw new Error(`Recipient ${index + 1} is not a valid phone number.`);
+                const number = raw.replace(/\D/g, '');
+                if (number.length < 7 || number.length > 15) throw new Error(`Recipient ${index + 1} must include a valid country code.`);
+                if (seen.has(number)) throw new Error(`Duplicate recipient number: ${raw}`);
+                seen.add(number);
+                return number;
+            });
+        }
+
+        async function queueMessage(number, tokenId, file) {
+            const type = messageType.value;
+            const key = encodeURIComponent(tokenId);
+            const endpointByType = {
+                image: '/message/imagefile',
+                video: '/message/video',
+                audio: '/message/audiofile',
+                document: '/message/doc'
+            };
+            if (type === 'text') {
+                const response = await fetch(`/message/text?key=${key}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: number,
+                        typeId: 'user',
+                        message: document.getElementById('messageText').value.trim()
+                    })
+                });
+                return response.json().then(result => {
+                    if (!response.ok || result.error) throw new Error(result.message || 'Message could not be queued.');
+                    return result;
+                });
+            }
+            const caption = document.getElementById('mediaCaption').value.trim();
+            if (mediaSource.value === 'url') {
+                const response = await fetch(`/message/sendurlfile?key=${key}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: number,
+                        typeId: 'user',
+                        type,
+                        url: mediaUrl.value.trim(),
+                        options: { caption }
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok || result.error) throw new Error(result.message || 'Media could not be queued.');
+                return result;
+            }
+            const formData = new FormData();
+            formData.append('id', number);
+            formData.append('typeId', 'user');
+            formData.append('caption', caption);
+            formData.append('file', file);
+            const response = await fetch(`${endpointByType[type]}?key=${key}`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (!response.ok || result.error) throw new Error(result.message || 'Media could not be queued.');
+            return result;
+        }
+
+        messageType.addEventListener('change', updateMessageFields);
+        mediaSource.addEventListener('change', updateMessageFields);
+        document.getElementById('messageForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            const button = document.getElementById('sendMessages');
+            const progress = document.getElementById('sendProgress');
+            const resultBox = document.getElementById('sendResult');
+            resultBox.className = 'alert d-none';
+            button.disabled = true;
+            try {
+                const recipients = getRecipients();
+                if (recipients.length > maxRecipients) {
+                    throw new Error(`Your plan allows up to ${maxRecipients} recipients per send.`);
+                }
+                if (dailyMessagesRemaining !== null && recipients.length > dailyMessagesRemaining) {
+                    throw new Error(`Only ${dailyMessagesRemaining} messages remain in today's plan limit.`);
+                }
+                const tokenId = document.getElementById('messageInstance').value;
+                if (!tokenId) throw new Error('Select a WhatsApp instance.');
+                const content = messageType.value === 'text'
+                    ? document.getElementById('messageText').value.trim()
+                    : mediaSource.value === 'url' ? mediaUrl.value.trim() : mediaFile.files[0];
+                if (!content) throw new Error(messageType.value === 'text' ? 'Enter a message.' : 'Choose a file or enter a media URL.');
+                if (messageType.value !== 'text' && mediaSource.value === 'url') {
+                    const url = new URL(content);
+                    if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Media URL must use HTTP or HTTPS.');
+                }
+                if (dailyMessagesRemaining !== null && dailyMessagesRemaining < 1) {
+                    throw new Error('No messages remain in today’s plan limit.');
+                }
+                let queued = 0;
+                const failures = [];
+                for (const number of recipients) {
+                    progress.textContent = `Queueing ${queued + failures.length + 1} of ${recipients.length}…`;
+                    try {
+                        await queueMessage(number, tokenId, mediaFile.files[0]);
+                        queued++;
+                    } catch (error) {
+                        failures.push(`${number}: ${error.message}`);
+                        if (/plan|limit|429/i.test(error.message)) break;
+                    }
+                }
+                resultBox.className = `alert ${failures.length ? 'alert-warning' : 'alert-success'}`;
+                resultBox.textContent = failures.length
+                    ? `${queued} queued; ${failures.length} failed. ${failures.slice(0, 3).join(' | ')}`
+                    : `${queued} messages added to the send queue.`;
+                progress.textContent = '';
+                if (queued) {
+                    dailyMessagesRemaining = dailyMessagesRemaining === null
+                        ? null
+                        : Math.max(0, dailyMessagesRemaining - queued);
+                }
+            } catch (error) {
+                resultBox.className = 'alert alert-danger';
+                resultBox.textContent = error.message;
+                progress.textContent = '';
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        updateMessageFields();
+        loadPlanLimits().catch(error => {
+            document.getElementById('planLimitsNotice').className = 'alert alert-danger py-2';
+            document.getElementById('planLimitsNotice').textContent = error.message;
+        });
+    </script>
+</body>
+</html>

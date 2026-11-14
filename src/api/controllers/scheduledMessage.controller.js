@@ -1,5 +1,6 @@
 const { URL } = require('url')
 const mongoose = require('mongoose')
+const config = require('../../config/config')
 const ScheduledMessage = require('../models/scheduledMessage.model')
 const Message = require('../models/message.model')
 const { isPlanExpired } = require('../helper/planAccess')
@@ -12,7 +13,32 @@ const {
 } = require('../helper/plans')
 
 const MAX_RECIPIENTS = 500
+const MAX_MEDIA_BYTES = 8 * 1024 * 1024
 const mediaTypes = new Set(['image', 'video', 'audio', 'document'])
+
+function validateMediaFile(file, type) {
+    if (!file) return { error: 'Choose a media file to upload.' }
+    if (file.size > MAX_MEDIA_BYTES) {
+        return { error: 'Media files must be 8 MB or smaller.' }
+    }
+    const allowedTypes = {
+        image: config.imageMimeTypes,
+        video: config.videoMimeTypes,
+        audio: config.audioMimeTypes,
+        document: config.documentMimeTypes,
+    }[type] || []
+    const mimetype = String(file.mimetype || '').split(';')[0].trim().toLowerCase()
+    if (!allowedTypes.includes(mimetype)) {
+        return { error: `The selected file type is not supported for ${type}.` }
+    }
+    return {
+        data: {
+            fileData: file.buffer.toString('base64'),
+            filename: file.originalname,
+            mimetype,
+        },
+    }
+}
 
 function getRecipientNumber(value) {
     if (!/^\+?[\d\s()-]+$/.test(String(value || ''))) return null
@@ -30,8 +56,9 @@ function getCounts(recipients = []) {
     )
 }
 
-function validateCampaignInput(body = {}, user) {
+function validateCampaignInput(body = {}, user, file, existingCampaign) {
     const { tokenId, numbers, type, message, url, caption, scheduledAt } = body
+    const source = type === 'text' ? 'url' : body.source || 'url'
     if (
         !tokenId ||
         !Array.isArray(user.insdetails) ||
@@ -42,6 +69,8 @@ function validateCampaignInput(body = {}, user) {
     if (isPlanExpired(user)) return { error: 'Your plan has expired.' }
     if (!['text', ...mediaTypes].includes(type))
         return { error: 'Select a valid message type.' }
+    if (!['url', 'upload'].includes(source))
+        return { error: 'Select a valid media source.' }
 
     const recipients = String(numbers || '')
         .split(',')
@@ -67,13 +96,33 @@ function validateCampaignInput(body = {}, user) {
     if (type === 'text' && !String(message || '').trim()) {
         return { error: 'Text message is required.' }
     }
-    if (type !== 'text') {
+    let media = {}
+    if (type !== 'text' && source === 'url') {
         try {
             const mediaUrl = new URL(String(url || ''))
             if (!['http:', 'https:'].includes(mediaUrl.protocol))
                 throw new Error('Invalid protocol')
         } catch {
             return { error: 'Enter a valid http or https media URL.' }
+        }
+    }
+    if (type !== 'text' && source === 'upload') {
+        if (file) {
+            const validatedFile = validateMediaFile(file, type)
+            if (validatedFile.error) return validatedFile
+            media = validatedFile.data
+        } else if (
+            existingCampaign?.source === 'upload' &&
+            existingCampaign.type === type &&
+            existingCampaign.fileData
+        ) {
+            media = {
+                fileData: existingCampaign.fileData,
+                filename: existingCampaign.filename,
+                mimetype: existingCampaign.mimetype,
+            }
+        } else {
+            return { error: 'Choose a media file to upload.' }
         }
     }
 
@@ -85,7 +134,9 @@ function validateCampaignInput(body = {}, user) {
             })),
             type,
             message: type === 'text' ? String(message).trim() : '',
-            url: type === 'text' ? '' : String(url).trim(),
+            source,
+            url: type === 'text' || source === 'upload' ? '' : String(url).trim(),
+            ...media,
             caption: type === 'text' ? '' : String(caption || ''),
             scheduledAt: date,
         },
@@ -95,7 +146,7 @@ function validateCampaignInput(body = {}, user) {
 exports.create = async (req, res) => {
     let reservedNumbers = []
     try {
-        const validated = validateCampaignInput(req.body, req.user)
+        const validated = validateCampaignInput(req.body, req.user, req.file)
         if (validated.error) {
             const status =
                 validated.error === 'Your plan has expired.'
@@ -134,7 +185,11 @@ exports.create = async (req, res) => {
             ownerId: req.user._id,
             ...validated.data,
         })
-        return res.status(201).json({ error: false, data: campaign })
+        const { fileData, ...campaignDetails } = campaign.toObject()
+        return res.status(201).json({
+            error: false,
+            data: { ...campaignDetails, hasUpload: Boolean(fileData) },
+        })
     } catch (error) {
         if (reservedNumbers.length) {
             try {
@@ -160,7 +215,25 @@ exports.update = async (req, res) => {
                 .status(404)
                 .json({ error: true, message: 'Scheduled message not found.' })
         }
-        const validated = validateCampaignInput(req.body, req.user)
+        const existingCampaign = await ScheduledMessage.findOne({
+            _id: req.params.id,
+            ownerId: req.user._id,
+            status: 'scheduled',
+            scheduledAt: { $gt: new Date() },
+        }).lean()
+        if (!existingCampaign) {
+            return res.status(409).json({
+                error: true,
+                message:
+                    'Only future messages that have not started sending can be edited.',
+            })
+        }
+        const validated = validateCampaignInput(
+            req.body,
+            req.user,
+            req.file,
+            existingCampaign
+        )
         if (validated.error) {
             const status =
                 validated.error === 'Your plan has expired.'
@@ -179,19 +252,6 @@ exports.update = async (req, res) => {
         )
         if (limitError) {
             return res.status(400).json({ error: true, message: limitError })
-        }
-        const existingCampaign = await ScheduledMessage.findOne({
-            _id: req.params.id,
-            ownerId: req.user._id,
-            status: 'scheduled',
-            scheduledAt: { $gt: new Date() },
-        }).lean()
-        if (!existingCampaign) {
-            return res.status(409).json({
-                error: true,
-                message:
-                    'Only future messages that have not started sending can be edited.',
-            })
         }
         const contactReservation = await reservePlanRecipients(
             req.user._id,
@@ -237,10 +297,11 @@ exports.update = async (req, res) => {
                 .filter((number) => !updatedNumbers.has(number)),
             campaign._id
         )
+        const { fileData, ...campaignDetails } = campaign.toObject()
         return res.json({
             error: false,
             message: 'Scheduled message updated.',
-            data: campaign,
+            data: { ...campaignDetails, hasUpload: Boolean(fileData) },
         })
     } catch (error) {
         console.error('Failed to update scheduled message:', error.message)
@@ -309,9 +370,14 @@ exports.details = async (req, res) => {
                 .status(404)
                 .json({ error: true, message: 'Scheduled message not found.' })
         }
+        const { fileData, ...campaignDetails } = campaign
         return res.json({
             error: false,
-            data: { ...campaign, counts: getCounts(campaign.recipients) },
+            data: {
+                ...campaignDetails,
+                hasUpload: Boolean(fileData),
+                counts: getCounts(campaign.recipients),
+            },
         })
     } catch (error) {
         console.error(

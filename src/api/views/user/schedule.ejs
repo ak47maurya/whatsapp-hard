@@ -25,18 +25,7 @@
                     class="navbar-brand d-flex align-items-center gap-2"
                     href="/manager/dashboard"
                 >
-                    <span
-                        class="d-inline-flex align-items-center justify-content-center"
-                        style="
-                            width: 38px;
-                            height: 38px;
-                            border-radius: 10px;
-                            background: #fff;
-                            color: var(--gold-dark);
-                            font-weight: 800;
-                        "
-                        >AK</span
-                    >
+                    <%- include('../partials/brand-mark', { size: 38 }) %>
                     <span>AK Automations</span>
                 </a>
                 <div class="d-flex align-items-center gap-3 ms-auto">
@@ -73,24 +62,7 @@
                 >
                     <div class="position-sticky pt-4 px-3">
                         <div class="text-center mb-4 pb-3 border-bottom">
-                            <div
-                                class="d-inline-flex align-items-center justify-content-center mx-auto mb-2"
-                                style="
-                                    width: 50px;
-                                    height: 50px;
-                                    border-radius: 12px;
-                                    background: linear-gradient(
-                                        135deg,
-                                        var(--gold-light),
-                                        var(--gold)
-                                    );
-                                    color: #fff;
-                                    font-weight: 800;
-                                    font-size: 1.25rem;
-                                "
-                            >
-                                AK
-                            </div>
+                            <%- include('../partials/brand-mark', { size: 50 }) %>
                             <h6 class="mb-0 fw-bold text-uppercase small">
                                 User Panel
                             </h6>
@@ -108,8 +80,7 @@
                                 Scheduled Messages
                             </h2>
                             <small class="text-muted"
-                                >Bulk text ya media message schedule karein aur
-                                delivery analytics dekhein.</small
+                                >Schedule bulk text or media messages and track delivery analytics.</small
                             >
                         </div>
                         <button
@@ -123,13 +94,12 @@
                     </div>
 
                     <div class="alert alert-info py-2" id="planLimitsNotice">
-                        Plan limits load ho rahe hain...
+                        Loading plan limits...
                     </div>
                     <% if (user.planStatus === 'Expired' &&
                     !user.role.includes('admin')) { %>
                     <div class="alert alert-danger">
-                        Aapka plan expire ho gaya hai. Schedule create ya send
-                        karne se pehle plan renew karein.
+                        Your plan has expired. Renew your plan before creating or sending a schedule.
                     </div>
                     <% } %>
 
@@ -141,7 +111,7 @@
                                 ></i
                                 >New Schedule
                             </h4>
-                            <form id="scheduleForm">
+                            <form id="scheduleForm" class="composer-form">
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label
@@ -155,7 +125,7 @@
                                             required
                                         >
                                             <option value="">
-                                                Instance select karein
+                                                Select an instance
                                             </option>
                                             <% (user.insdetails ||
                                             []).forEach(instance => { %>
@@ -216,10 +186,7 @@
                                             required
                                         ></textarea>
                                         <div class="form-text">
-                                            Country code ke saath number
-                                            likhein. Maximum 500 recipients per
-                                            schedule; sirf opted-in contacts ko
-                                            message bhejein.
+                                            Include the country code. Maximum 500 recipients per schedule. Send messages only to opted-in contacts.
                                         </div>
                                     </div>
                                     <div class="col-12" id="scheduleTextField">
@@ -233,23 +200,31 @@
                                             id="scheduleMessage"
                                             rows="3"
                                             maxlength="4000"
-                                            placeholder="Apna message likhein"
+                                            placeholder="Enter your message"
                                         ></textarea>
                                     </div>
                                     <div
-                                        class="col-md-8 d-none"
-                                        id="scheduleMediaFields"
+                                        class="col-md-6 d-none"
+                                        id="scheduleSourceField"
                                     >
-                                        <label
-                                            for="scheduleUrl"
-                                            class="form-label fw-semibold"
-                                            >Media URL</label
-                                        >
+                                        <label for="scheduleSource" class="form-label fw-semibold">Media source</label>
+                                        <select class="form-select" id="scheduleSource">
+                                            <option value="upload">Upload a file</option>
+                                            <option value="url">Use a public URL</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 d-none" id="scheduleUploadField">
+                                        <label for="scheduleFile" class="form-label fw-semibold">Media file</label>
+                                        <input class="form-control" id="scheduleFile" type="file">
+                                        <div class="form-text" id="scheduleFileHelp">Upload a media file up to 8 MB.</div>
+                                    </div>
+                                    <div class="col-md-8 d-none" id="scheduleUrlField">
+                                        <label for="scheduleUrl" class="form-label fw-semibold">Public media URL</label>
                                         <input
                                             class="form-control"
                                             id="scheduleUrl"
                                             type="url"
-                                            placeholder="https://example.com/file"
+                                            placeholder="https://example.com/media.mp4"
                                         />
                                     </div>
                                     <div
@@ -289,9 +264,7 @@
                                             Cancel edit
                                         </button>
                                         <span class="text-muted small ms-2"
-                                            >Device scheduled time par offline
-                                            hua to online aane par sending start
-                                            hogi.</span
+                                            >If the device is offline at the scheduled time, delivery will start when it comes online.</span
                                         >
                                     </div>
                                 </div>
@@ -374,7 +347,7 @@
                                 </div>
                             </form>
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle">
+                                <table class="table align-middle">
                                     <thead>
                                         <tr>
                                             <th>Template</th>
@@ -544,7 +517,7 @@
                                 </button>
                             </div>
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle">
+                                <table class="table align-middle">
                                     <thead>
                                         <tr>
                                             <th>Scheduled time</th>
@@ -587,7 +560,7 @@
                                 >
                             </div>
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle">
+                                <table class="table align-middle">
                                     <thead>
                                         <tr>
                                             <th>Scheduled time</th>
@@ -654,7 +627,7 @@
                         </div>
                         <div class="table-responsive">
                             <table
-                                class="table table-sm table-hover align-middle"
+                                class="table table-sm align-middle"
                             >
                                 <thead>
                                     <tr>
@@ -678,11 +651,14 @@
         <script src="/js/user-navigation.js"></script>
         <script>
             const scheduleType = document.getElementById('scheduleType')
+            const scheduleSource = document.getElementById('scheduleSource')
+            const scheduleFile = document.getElementById('scheduleFile')
             const scheduleForm = document.getElementById('scheduleForm')
             const scheduleModal = new bootstrap.Modal(
                 document.getElementById('scheduleAnalyticsModal')
             )
             let editingCampaignId = null
+            let editingCampaign = null
             let maxRecipientsPerCampaign = 500
             const stateClasses = {
                 scheduled: 'bg-primary',
@@ -695,19 +671,43 @@
 
             function updateScheduleFields() {
                 const media = scheduleType.value !== 'text'
+                const upload = scheduleSource.value === 'upload'
                 document
                     .getElementById('scheduleTextField')
                     .classList.toggle('d-none', media)
                 document
-                    .getElementById('scheduleMediaFields')
+                    .getElementById('scheduleSourceField')
                     .classList.toggle('d-none', !media)
+                document
+                    .getElementById('scheduleUploadField')
+                    .classList.toggle('d-none', !media || !upload)
+                document
+                    .getElementById('scheduleUrlField')
+                    .classList.toggle('d-none', !media || upload)
                 document
                     .getElementById('scheduleCaptionField')
                     .classList.toggle('d-none', !media)
                 document.getElementById('scheduleMessage').required = !media
-                document.getElementById('scheduleUrl').required = media
+                document.getElementById('scheduleUrl').required =
+                    media && !upload
+                scheduleFile.required =
+                    media &&
+                    upload &&
+                    !(
+                        editingCampaign?.type === scheduleType.value &&
+                        editingCampaign?.source === 'upload' &&
+                        editingCampaign?.hasUpload
+                    )
+                const acceptedTypes = {
+                    image: 'image/*',
+                    video: 'video/*',
+                    audio: 'audio/*',
+                    document: '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip'
+                }
+                scheduleFile.accept = acceptedTypes[scheduleType.value] || ''
             }
             scheduleType.addEventListener('change', updateScheduleFields)
+            scheduleSource.addEventListener('change', updateScheduleFields)
             updateScheduleFields()
 
             function addCell(row, value, className = '') {
@@ -742,7 +742,7 @@
                 const response = await fetch('/manager/plan-summary')
                 const result = await response.json()
                 if (!response.ok || result.error)
-                    throw new Error(result.message || 'Plan limits load nahi ho sake.')
+                    throw new Error(result.message || 'Plan limits could not be loaded.')
                 const plan = result.data
                 maxRecipientsPerCampaign = plan.dailyMessageLimit
                     ? Math.min(plan.maxRecipientsPerCampaign, plan.dailyMessageLimit)
@@ -759,6 +759,7 @@
 
             function setEditingState(campaign) {
                 editingCampaignId = campaign?._id || null
+                editingCampaign = campaign || null
                 document.getElementById('scheduleFormTitle').innerHTML =
                     editingCampaignId
                         ? '<i class="fa-solid fa-pen-to-square text-primary me-2"></i>Edit Schedule'
@@ -775,6 +776,8 @@
             function cancelScheduleEdit() {
                 scheduleForm.reset()
                 setEditingState(null)
+                document.getElementById('scheduleFileHelp').textContent =
+                    'Upload a media file up to 8 MB.'
                 updateScheduleFields()
             }
 
@@ -786,7 +789,7 @@
                     const result = await response.json()
                     if (!response.ok || result.error)
                         throw new Error(
-                            result.message || 'Schedule details load nahi hue.'
+                            result.message || 'Schedule details could not be loaded.'
                         )
                     const campaign = result.data
                     if (
@@ -794,9 +797,10 @@
                         new Date(campaign.scheduledAt) <= new Date()
                     ) {
                         throw new Error(
-                            'Sirf future scheduled message edit kiya ja sakta hai.'
+                            'Only future scheduled messages can be edited.'
                         )
                     }
+                    editingCampaign = campaign
                     document.getElementById('scheduleInstance').value =
                         campaign.tokenId
                     document.getElementById('scheduleAt').value = new Date(
@@ -807,6 +811,7 @@
                         .slice(0, 16)
                     document.getElementById('scheduleType').value =
                         campaign.type
+                    scheduleSource.value = campaign.source || 'url'
                     document.getElementById('scheduleNumbers').value =
                         campaign.recipients
                             .map((recipient) => recipient.number)
@@ -817,6 +822,10 @@
                         campaign.url || ''
                     document.getElementById('scheduleCaption').value =
                         campaign.caption || ''
+                    document.getElementById('scheduleFileHelp').textContent =
+                        campaign.source === 'upload'
+                            ? `Current file: ${campaign.filename}. Choose a new file to replace it, or leave this field empty to keep it.`
+                            : 'Upload a media file up to 8 MB.'
                     setEditingState(campaign)
                     updateScheduleFields()
                     document
@@ -834,7 +843,7 @@
                     const result = await response.json()
                     if (!response.ok || result.error)
                         throw new Error(
-                            result.message || 'Schedules load nahi ho sake.'
+                            result.message || 'Schedules could not be loaded.'
                         )
                     body.replaceChildren()
                     document.getElementById(
@@ -845,8 +854,7 @@
                         const cell = row.insertCell()
                         cell.colSpan = 6
                         cell.className = 'text-center text-muted py-4'
-                        cell.textContent =
-                            'Abhi koi scheduled message nahi hai.'
+                        cell.textContent = 'No scheduled messages yet.'
                         return
                     }
 
@@ -930,7 +938,7 @@
                     const result = await response.json()
                     if (!response.ok || result.error)
                         throw new Error(
-                            result.message || 'Analytics load nahi ho saki.'
+                            result.message || 'Analytics could not be loaded.'
                         )
                     const campaign = result.data
                     document.getElementById('analyticsTitle').textContent = `${
@@ -1020,7 +1028,7 @@
             async function cancelCampaign(id) {
                 if (
                     !confirm(
-                        'Kya aap is scheduled message ko cancel karna chahte hain?'
+                        'Cancel this scheduled message?'
                     )
                 )
                     return
@@ -1034,7 +1042,7 @@
                     const result = await response.json()
                     if (!response.ok || result.error)
                         throw new Error(
-                            result.message || 'Schedule cancel nahi ho saka.'
+                            result.message || 'The schedule could not be canceled.'
                         )
                     showNotice('success', result.message)
                     loadCampaigns()
@@ -1046,7 +1054,7 @@
             async function deleteCampaign(id) {
                 if (
                     !confirm(
-                        'Is schedule aur iske delivery records ko permanently delete karein?'
+                        'Permanently delete this schedule and its delivery records?'
                     )
                 )
                     return
@@ -1058,7 +1066,7 @@
                     const result = await response.json()
                     if (!response.ok || result.error)
                         throw new Error(
-                            result.message || 'Schedule delete nahi ho saka.'
+                            result.message || 'The schedule could not be deleted.'
                         )
                     showNotice('success', result.message)
                     if (editingCampaignId === id) cancelScheduleEdit()
@@ -1529,13 +1537,13 @@
                     if (!response.ok || result.error)
                         throw new Error(
                             result.message ||
-                                'Template schedule save nahi ho saka.'
+                                'The template schedule could not be saved.'
                         )
                     showNotice(
                         'success',
                         editingTemplateScheduleId
-                            ? 'Template schedule update ho gaya.'
-                            : 'Template messages schedule ho gaye.'
+                            ? 'Template schedule updated.'
+                            : 'Template messages scheduled.'
                     )
                     resetTemplateScheduleForm()
                     await loadTemplateSchedules()
@@ -1557,7 +1565,7 @@
                     if (!response.ok || result.error)
                         throw new Error(
                             result.message ||
-                                'Template schedule load nahi ho saka.'
+                                'The template schedule could not be loaded.'
                         )
                     const campaign = result.data
                     if (
@@ -1570,7 +1578,7 @@
                     }
                     if (!templatesById.has(String(campaign.templateId))) {
                         throw new Error(
-                            'Is schedule ka template ab available nahi hai. Pehle ek naya template banayein.'
+                            'The template for this schedule is no longer available. Create a new template first.'
                         )
                     }
                     editingTemplateScheduleId = campaign._id
@@ -1587,7 +1595,7 @@
                     templateWorkbookInput.value = ''
                     templateWorkbookInput.required = false
                     document.getElementById('spreadsheetStatus').textContent =
-                        'Excel optional hai. Nayi file choose karein to recipient data update hoga; warna purana JSON data rahega.'
+                        'The Excel file is optional when editing. Select a new file to update recipient data; otherwise, the existing data will be kept.'
                     document.getElementById('templateScheduleTitle').innerHTML =
                         '<i class="fa-solid fa-pen-to-square text-primary me-2"></i>Edit Template Schedule'
                     document.getElementById(
@@ -1610,7 +1618,7 @@
             async function deleteTemplateSchedule(id) {
                 if (
                     !confirm(
-                        'Is template schedule ko delete karein? Sending shuru ho chuki ho toh delete nahi hoga.'
+                        'Delete this template schedule? Schedules that have started sending cannot be deleted.'
                     )
                 )
                     return
@@ -1625,7 +1633,7 @@
                     if (!response.ok || result.error)
                         throw new Error(
                             result.message ||
-                                'Template schedule delete nahi ho saka.'
+                                'The template schedule could not be deleted.'
                         )
                     showNotice('success', result.message)
                     if (editingTemplateScheduleId === id)
@@ -1648,7 +1656,7 @@
                     if (!response.ok || result.error)
                         throw new Error(
                             result.message ||
-                                'Template schedules load nahi ho sake.'
+                                'Template schedules could not be loaded.'
                         )
                     body.replaceChildren()
                     if (!result.data.length) {
@@ -1657,7 +1665,7 @@
                         cell.colSpan = 6
                         cell.className = 'text-center text-muted py-3'
                         cell.textContent =
-                            'Abhi koi template schedule nahi hai.'
+                            'No template schedules yet.'
                         return
                     }
                     for (const campaign of result.data) {
@@ -1737,18 +1745,37 @@
                     const scheduledAt = new Date(
                         document.getElementById('scheduleAt').value
                     )
-                    const payload = {
-                        tokenId:
-                            document.getElementById('scheduleInstance').value,
-                        numbers:
-                            document.getElementById('scheduleNumbers').value,
-                        type: scheduleType.value,
-                        scheduledAt: scheduledAt.toISOString(),
-                        message:
-                            document.getElementById('scheduleMessage').value,
-                        url: document.getElementById('scheduleUrl').value,
-                        caption:
-                            document.getElementById('scheduleCaption').value,
+                    const payload = new FormData()
+                    payload.append(
+                        'tokenId',
+                        document.getElementById('scheduleInstance').value
+                    )
+                    payload.append(
+                        'numbers',
+                        document.getElementById('scheduleNumbers').value
+                    )
+                    payload.append('type', scheduleType.value)
+                    payload.append(
+                        'source',
+                        scheduleType.value === 'text'
+                            ? 'url'
+                            : scheduleSource.value
+                    )
+                    payload.append('scheduledAt', scheduledAt.toISOString())
+                    payload.append(
+                        'message',
+                        document.getElementById('scheduleMessage').value
+                    )
+                    payload.append(
+                        'url',
+                        document.getElementById('scheduleUrl').value
+                    )
+                    payload.append(
+                        'caption',
+                        document.getElementById('scheduleCaption').value
+                    )
+                    if (scheduleFile.files[0]) {
+                        payload.append('file', scheduleFile.files[0])
                     }
                     const response = await fetch(
                         editingCampaignId
@@ -1758,30 +1785,31 @@
                             : '/manager/scheduled-messages',
                         {
                             method: editingCampaignId ? 'PUT' : 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload),
+                            body: payload,
                         }
                     )
                     const result = await response.json()
                     if (!response.ok || result.error)
                         throw new Error(
-                            result.message || 'Message schedule nahi ho saka.'
+                            result.message || 'The message could not be scheduled.'
                         )
                     showNotice(
                         'success',
                         editingCampaignId
-                            ? 'Schedule update ho gaya.'
-                            : 'Message schedule ho gaya.'
+                            ? 'Schedule updated.'
+                            : 'Message scheduled.'
                     )
                     scheduleForm.reset()
                     setEditingState(null)
+                    document.getElementById('scheduleFileHelp').textContent =
+                        'Upload a media file up to 8 MB.'
                     updateScheduleFields()
                     await loadCampaigns()
                 } catch (error) {
                     showNotice(
                         'error',
                         error.message ||
-                            'Date/time select karein aur valid schedule details enter karein.'
+                            'Select a valid date and time, then enter the schedule details.'
                     )
                 } finally {
                     button.disabled = false

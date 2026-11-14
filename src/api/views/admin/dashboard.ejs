@@ -33,12 +33,10 @@
     .sidebar .nav-link { color: var(--ink-soft); border-radius: 10px; margin: 2px 12px; font-weight: 500; transition: all .25s; }
     .sidebar .nav-link:hover { background: var(--gold-soft); color: var(--gold-dark); }
     .sidebar .nav-link.active { background: var(--gold-soft); color: var(--gold-dark); font-weight: 600; }
-    .stat-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(169,134,29,.08); transition: transform .2s, box-shadow .2s; }
-    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 16px 36px rgba(169,134,29,.15); }
+    .stat-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(169,134,29,.08); }
     .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.25rem; background: var(--gold-soft); color: var(--gold-dark); }
     .table-wrapper { background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
     .table thead th { background: var(--gold-soft); color: var(--ink); border-bottom: 2px solid var(--line); font-weight: 600; }
-    .table tbody tr:hover { background: var(--gold-soft); }
     .btn-gold { background: linear-gradient(135deg, var(--gold-light), var(--gold)); border: none; color: #fff; font-weight: 600; border-radius: 50px; box-shadow: 0 6px 18px rgba(169,134,29,.3); }
     .btn-gold:hover { color: #fff; filter: brightness(1.05); }
     .btn-outline-gold { border: 1.5px solid var(--gold); color: var(--gold-dark); background: transparent; font-weight: 600; border-radius: 50px; }
@@ -66,7 +64,7 @@
   <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
     <div class="container-fluid px-4">
       <a class="navbar-brand d-flex align-items-center gap-2" href="/manager/dashboard">
-        <span class="d-inline-flex align-items-center justify-content-center" style="width:38px;height:38px;border-radius:10px;background:#fff;color:var(--gold-dark);font-weight:800;font-size:1rem;">AK</span>
+        <%- include('../partials/brand-mark', { size: 38 }) %>
         <span>AK Automations Admin</span>
       </a>
       <div class="d-flex align-items-center gap-3 ms-auto">
@@ -97,7 +95,7 @@
       <nav class="col-md-3 col-lg-2 sidebar" id="sidebar">
         <div class="position-sticky pt-4 px-3" style="height: calc(100vh - 56px);">
           <div class="text-center mb-4 pb-3 border-bottom">
-            <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-2" style="width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#fff;font-weight:800;font-size:1.25rem;">AK</div>
+            <%- include('../partials/brand-mark', { size: 50 }) %>
             <h6 class="mb-0 fw-bold text-uppercase text-gold small">Admin Panel</h6>
           </div>
           <ul class="nav flex-column">
@@ -271,6 +269,47 @@
     </div>
   </div>
 
+  <div class="modal fade" id="editUserPlanModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa-solid fa-tags me-2"></i>Edit User Plan</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="editUserPlanForm">
+          <div class="modal-body row g-3 p-4">
+            <input type="hidden" id="planEditUserId">
+            <div class="col-12">
+              <label class="form-label" for="planEditId">Assigned plan</label>
+              <select class="form-select" id="planEditId" required></select>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="planEditStatus">Plan status</label>
+              <select class="form-select" id="planEditStatus" required>
+                <option value="Trial">Trial</option>
+                <option value="Active">Active</option>
+                <option value="Expired">Expired</option>
+                <option value="Suspended">Suspended</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="planEditStartDate">Start date</label>
+              <input type="date" class="form-control" id="planEditStartDate" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="planEditEndDate">End date</label>
+              <input type="date" class="form-control" id="planEditEndDate" required>
+            </div>
+          </div>
+          <div class="modal-footer border-0 p-3">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-gold">Save Plan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Create User Modal -->
   <div class="modal fade" id="newUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -379,7 +418,7 @@
       const result = await response.json();
       if (!response.ok || result.error) throw new Error(result.message || 'Failed to load plans');
       availablePlans = result.data.filter(plan => plan.active);
-      for (const id of ['assignedPlanId', 'newAssignedPlanId']) {
+      for (const id of ['assignedPlanId', 'newAssignedPlanId', 'planEditId']) {
         const select = document.getElementById(id);
         select.replaceChildren();
         availablePlans.forEach(plan => {
@@ -447,6 +486,69 @@
       new bootstrap.Modal(document.getElementById('editDiv')).show();
     };
 
+    window.openPlanEdit = function(userId) {
+      const row = window.tableData?.find(user => String(user._id) === String(userId));
+      if (!row) return;
+      const assignedPlan = availablePlans.find(plan =>
+        String(plan._id) === String(row.planId?._id || row.planId)
+      ) || availablePlans.find(plan =>
+        String(row.planType || '').toLowerCase().includes(plan.name.toLowerCase())
+      ) || availablePlans[0];
+      document.getElementById('planEditUserId').value = row._id;
+      document.getElementById('planEditId').value = assignedPlan?._id || '';
+      document.getElementById('planEditStatus').value = row.planStatus || 'Trial';
+      document.getElementById('planEditStartDate').value = formatToDateInput(row.startDate);
+      document.getElementById('planEditEndDate').value = formatToDateInput(row.endDate);
+      if (!document.getElementById('planEditStartDate').value) {
+        document.getElementById('planEditStartDate').value = new Date().toISOString().slice(0, 10);
+      }
+      if (!document.getElementById('planEditEndDate').value && assignedPlan) {
+        updatePlanEditEndDate();
+      }
+      new bootstrap.Modal(document.getElementById('editUserPlanModal')).show();
+    };
+
+    function updatePlanEditEndDate() {
+      const plan = availablePlans.find(item =>
+        item._id === document.getElementById('planEditId').value
+      );
+      const startValue = document.getElementById('planEditStartDate').value;
+      if (!plan || !startValue) return;
+      const end = new Date(`${startValue}T00:00:00`);
+      end.setDate(end.getDate() + plan.durationDays);
+      const month = String(end.getMonth() + 1).padStart(2, '0');
+      const day = String(end.getDate()).padStart(2, '0');
+      document.getElementById('planEditEndDate').value = `${end.getFullYear()}-${month}-${day}`;
+    }
+
+    document.getElementById('planEditId').addEventListener('change', updatePlanEditEndDate);
+    document.getElementById('planEditStartDate').addEventListener('change', updatePlanEditEndDate);
+    document.getElementById('editUserPlanForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const id = document.getElementById('planEditUserId').value;
+      const data = {
+        planId: document.getElementById('planEditId').value,
+        planStatus: document.getElementById('planEditStatus').value,
+        startDate: document.getElementById('planEditStartDate').value,
+        endDate: document.getElementById('planEditEndDate').value
+      };
+      try {
+        const response = await fetch(`/manager/users/${encodeURIComponent(id)}/plan`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (!response.ok || result.error) throw new Error(result.error || 'Plan update failed.');
+        bootstrap.Modal.getInstance(document.getElementById('editUserPlanModal')).hide();
+        await loadUsers();
+        toastr.success('User plan updated');
+      } catch (error) {
+        console.error('Update user plan error:', error);
+        toastr.error(error.message || 'Plan update failed');
+      }
+    });
+
     // Delete user
     window.deleteRow = function(userId) {
       const row = window.tableData?.find(user => String(user._id) === String(userId));
@@ -491,6 +593,7 @@
             { data: 'planType' },
             { data: null, className: 'text-center', orderable: false, searchable: false, render: (d, t, row) => `
                 <button class="btn btn-sm btn-outline-gold me-1" data-user-action="edit" data-user-id="${row._id}" title="Edit" aria-label="Edit user"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-sm btn-outline-primary me-1" data-user-action="plan" data-user-id="${row._id}" title="Edit plan" aria-label="Edit user plan"><i class="fa-solid fa-tags"></i></button>
                 <button class="btn btn-sm btn-outline-danger" data-user-action="delete" data-user-id="${row._id}" title="Delete" aria-label="Delete user"><i class="fa-solid fa-trash"></i></button>
               ` }
           ],
@@ -519,6 +622,7 @@
       const button = event.target.closest('button[data-user-action]');
       if (!button) return;
       if (button.dataset.userAction === 'edit') openEdit(button.dataset.userId);
+      if (button.dataset.userAction === 'plan') openPlanEdit(button.dataset.userId);
       if (button.dataset.userAction === 'delete') deleteRow(button.dataset.userId);
     });
 

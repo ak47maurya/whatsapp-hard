@@ -111,8 +111,7 @@
   <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
     <div class="container-fluid px-4">
       <a class="navbar-brand d-flex align-items-center gap-2" href="/manager/dashboard">
-        <span class="d-inline-flex align-items-center justify-content-center"
-          style="width:38px;height:38px;border-radius:10px;background:#fff;color:var(--gold-dark);font-weight:800;">AK</span>
+        <%- include('../partials/brand-mark', { size: 38 }) %>
         <span>AK Automations</span>
       </a>
       <div class="d-flex align-items-center gap-3 ms-auto">
@@ -135,9 +134,7 @@
       <nav class="col-md-3 col-lg-2 sidebar" id="userSidebar" aria-label="Main navigation">
         <div class="position-sticky pt-4 px-3">
           <div class="text-center mb-4 pb-3 border-bottom">
-            <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-2"
-              style="width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#fff;font-weight:800;font-size:1.25rem;">
-              AK</div>
+            <%- include('../partials/brand-mark', { size: 50 }) %>
             <h6 class="mb-0 fw-bold text-uppercase small">User Panel</h6>
           </div>
           <%- include('partials/sidebar-navigation', { activePage: 'helps' }) %>
@@ -159,10 +156,10 @@
               Message, group and misc endpoints require that instance to be connected. When
               <code>PROTECT_ROUTES=true</code>, also send <code>Authorization: Bearer YOUR_TOKEN</code> for
               instance/message/group/misc routes.</p>
-            <p class="mb-0">Each endpoint below includes a sample JSON request body. GET endpoints that do not consume a
-              body show <code>{}</code>; send their query and path parameters in the URL instead. For file-upload
-              routes, the JSON example shows metadata only; send the actual file as multipart form field
-              <code>file</code>.</p>
+            <p class="mb-0">Each endpoint below includes a complete example request body. GET endpoints that do not
+              consume a body show <code>{}</code>; send their query and path parameters in the URL instead. File-upload
+              examples list every multipart field and use a placeholder for the binary <code>file</code>; upload an
+              actual file in that field (maximum size: 8 MB).</p>
           </div>
 
           <div class="doc-card p-3 p-md-4 mb-4">
@@ -239,12 +236,6 @@
                     <td>Logs out the connected WhatsApp session and reinitializes it.</td>
                   </tr>
                   <tr>
-                    <td><span class="badge bg-primary">GET</span></td>
-                    <td class="endpoint"><code>{{baseUrl}}/instance/delete?key=KEY</code></td>
-                    <td>Instance key</td>
-                    <td>Deletes the specified WhatsApp instance.</td>
-                  </tr>
-                  <tr>
                     <td><span class="badge bg-success">POST</span></td>
                     <td class="endpoint"><code>{{baseUrl}}/instance/getcode?key=KEY</code></td>
                     <td>Instance key</td>
@@ -281,7 +272,7 @@
                     <td><span class="badge bg-success">POST</span></td>
                     <td class="endpoint"><code>{{baseUrl}}/message/image?key=KEY</code></td>
                     <td><code>id</code>, <code>typeId</code>, <code>file</code> (multipart); optional
-                      <code>caption</code></td>
+                      <code>caption</code>, <code>replyFrom</code>, <code>delay</code></td>
                     <td>Adds an uploaded image to the send queue.</td>
                   </tr>
                   <tr>
@@ -294,8 +285,8 @@
                   <tr>
                     <td><span class="badge bg-success">POST</span></td>
                     <td class="endpoint"><code>{{baseUrl}}/message/sendbase64file?key=KEY</code></td>
-                    <td><code>id</code>, <code>typeId</code>, <code>base64</code>; optional <code>caption</code></td>
-                    <td>Adds a Base64-encoded file to the send queue.</td>
+                    <td><code>id</code>, <code>typeId</code> (<code>user</code> or <code>group</code>), <code>base64</code>, <code>filename</code>; optional <code>type</code> (<code>image</code>, <code>video</code>, <code>audio</code>, or <code>document</code>), <code>mimetype</code>, <code>caption</code>, and <code>options</code> (<code>caption</code>, <code>replyFrom</code>, <code>delay</code>)</td>
+                    <td>Adds a Base64-encoded media file to the send queue. The type defaults to <code>document</code>.</td>
                   </tr>
                   <tr>
                     <td><span class="badge bg-success">POST</span></td>
@@ -321,7 +312,8 @@
                   <tr>
                     <td><span class="badge bg-success">POST</span></td>
                     <td class="endpoint"><code>{{baseUrl}}/message/audio?key=KEY</code></td>
-                    <td><code>id</code>, <code>typeId</code>, <code>file</code> (multipart)</td>
+                    <td><code>id</code>, <code>typeId</code>, <code>file</code> (multipart); optional
+                      <code>caption</code>, <code>replyFrom</code>, <code>delay</code></td>
                     <td>Adds an audio upload to the queue.</td>
                   </tr>
                   <tr>
@@ -341,7 +333,8 @@
                   <tr>
                     <td><span class="badge bg-success">POST</span></td>
                     <td class="endpoint"><code>{{baseUrl}}/message/button?key=KEY</code></td>
-                    <td><code>id</code>, <code>typeId</code>, <code>btndata</code></td>
+                    <td><code>id</code>, <code>btndata</code>; optional <code>typeId</code> (defaults to
+                      <code>user</code>)</td>
                     <td>Adds an interactive button message to the queue.</td>
                   </tr>
                   <tr>
@@ -678,7 +671,6 @@
         '/instance/qrbase64': {},
         '/instance/info': {},
         '/instance/logout': {},
-        '/instance/delete': {},
         '/instance/getcode': { number: '15551234567' },
 
 
@@ -695,7 +687,14 @@
             "markUser": "ghostMention" //mentions everyone without showing the tag, or you can pass the user ids ["user1","user2"]
           }
         },
-        '/message/image': { id: '15551234567@s.whatsapp.net', typeId: 'image', caption: 'Example image' },
+        '/message/image': {
+          id: '15551234567',
+          typeId: 'user',
+          file: '<binary file: photo.jpg>',
+          caption: 'Example image',
+          replyFrom: '',
+          delay: '0'
+        },
         
         '/message/sendurlfile': {
           id: '1234567890',
@@ -704,14 +703,74 @@
           url: 'https://example.com/file.pdf',
           options: { caption: 'Example file', replyFrom: '', delay: 0 }
         },
-        '/message/sendbase64file': { id: '15551234567@s.whatsapp.net', typeId: 'document', base64: 'BASE64_ENCODED_FILE_CONTENT', caption: 'Example file' },
-        '/message/imagefile': { id: '15551234567@s.whatsapp.net', typeId: 'image', userType: 'user', caption: 'Example image', replyFrom: '', delay: 0 },
-        '/message/audiofile': { id: '15551234567@s.whatsapp.net', typeId: 'audio', userType: 'user', caption: '', replyFrom: '', delay: 0 },
-        '/message/video': { id: '15551234567@s.whatsapp.net', typeId: 'video', userType: 'user', caption: 'Example video', replyFrom: '', delay: 0 },
-        '/message/audio': { id: '15551234567@s.whatsapp.net', typeId: 'audio' },
-        '/message/doc': { id: '15551234567@s.whatsapp.net', typeId: 'document', userType: 'user', caption: 'Example document', replyFrom: '', delay: 0 },
-        '/message/mediaurl': { id: '15551234567@s.whatsapp.net', typeId: 'media', url: 'https://example.com/image.jpg', type: 'image', mimetype: 'image/jpeg', caption: 'Example image' },
-        '/message/button': { id: '15551234567@s.whatsapp.net', typeId: 'button', btndata: { text: 'Choose an option', buttons: [{ id: 'yes', text: 'Yes' }] } },
+        '/message/sendbase64file': {
+          id: '15551234567',
+          typeId: 'user',
+          type: 'document',
+          filename: 'report.pdf',
+          mimetype: 'application/pdf',
+          base64: 'BASE64_ENCODED_FILE_CONTENT',
+          caption: 'Example file',
+          options: { replyFrom: '', delay: 0 }
+        },
+        '/message/imagefile': {
+          id: '15551234567',
+          typeId: 'user',
+          userType: 'user',
+          file: '<binary file: photo.jpg>',
+          caption: 'Example image',
+          replyFrom: '',
+          delay: '0'
+        },
+        '/message/audiofile': {
+          id: '15551234567',
+          typeId: 'user',
+          userType: 'user',
+          file: '<binary file: audio.mp3>',
+          caption: '',
+          replyFrom: '',
+          delay: '0'
+        },
+        '/message/video': {
+          id: '15551234567',
+          typeId: 'user',
+          userType: 'user',
+          file: '<binary file: video.mp4>',
+          caption: 'Example video',
+          replyFrom: '',
+          delay: '0'
+        },
+        '/message/audio': {
+          id: '15551234567',
+          typeId: 'user',
+          file: '<binary file: audio.mp3>',
+          caption: '',
+          replyFrom: '',
+          delay: '0'
+        },
+        '/message/doc': {
+          id: '15551234567',
+          typeId: 'user',
+          userType: 'user',
+          file: '<binary file: report.pdf>',
+          caption: 'Example document',
+          replyFrom: '',
+          delay: '0'
+        },
+        '/message/mediaurl': { id: '15551234567', typeId: 'user', url: 'https://example.com/image.jpg', type: 'image', mimetype: 'image/jpeg', caption: 'Example image' },
+        '/message/button': {
+          id: '15551234567',
+          typeId: 'user',
+          btndata: {
+            text: 'Hello Friends',
+            footerText: 'Example footer',
+            buttons: [
+              { type: 'replyButton', title: 'Reply' },
+              { type: 'urlButton', title: 'Open website', payload: 'https://example.com' },
+              { type: 'callButton', title: 'Call us', payload: '15551234567' }
+            ]
+          }
+        },
         '/message/mediabutton': { id: '15551234567@s.whatsapp.net', typeId: 'mediabutton', btndata: { text: 'Choose an option', buttons: [{ id: 'yes', text: 'Yes' }] } },
         '/message/contact': { id: '15551234567@s.whatsapp.net', typeId: 'contact', vcard: 'BEGIN:VCARD\\nVERSION:3.0\\nFN:Example Contact\\nTEL:15551234567\\nEND:VCARD' },
         '/message/list': { id: '15551234567@s.whatsapp.net', typeId: 'list', options: [], groupOptions: [], msgdata: {} },
@@ -747,6 +806,14 @@
         '/misc/updateProfilePicture': { id: '15551234567@s.whatsapp.net', url: 'https://example.com/profile.jpg', type: 'image' },
         '/misc/getuserorgroupbyid': { id: '15551234567@s.whatsapp.net' }
       };
+      const multipartRoutes = new Set([
+        '/message/image',
+        '/message/imagefile',
+        '/message/audiofile',
+        '/message/video',
+        '/message/audio',
+        '/message/doc'
+      ]);
 
       const cards = [];
       document.querySelectorAll('.api-table').forEach(table => {
@@ -760,7 +827,7 @@
           const endpoint = endpointCode.textContent.trim();
           const route = endpoint.replace('{{baseUrl}}', '').split('?')[0];
           if (!Object.prototype.hasOwnProperty.call(requestExamples, route)) {
-            throw new Error(`Missing JSON example for API endpoint: ${route}`);
+            throw new Error(`Missing request example for API endpoint: ${route}`);
           }
 
           const card = document.createElement('article');
@@ -789,7 +856,9 @@
           exampleBlock.className = 'example-block';
           const exampleLabel = document.createElement('span');
           exampleLabel.className = 'endpoint-card-detail-label';
-          exampleLabel.textContent = 'Example JSON body';
+          exampleLabel.textContent = multipartRoutes.has(route)
+            ? 'Example multipart/form-data fields'
+            : 'Example JSON body';
           exampleBlock.appendChild(exampleLabel);
           const pre = document.createElement('pre');
           const code = document.createElement('code');

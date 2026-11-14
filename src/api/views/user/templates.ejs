@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create Template — AK Automations</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="user-layout">
+    <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/manager/dashboard">
+                <%- include('../partials/brand-mark', { size: 38 }) %>
+                <span>AK Automations</span>
+            </a>
+            <div class="d-flex align-items-center gap-3 ms-auto">
+                <span class="text-white-50 small d-none d-md-inline">Welcome, <strong><%= user.username %></strong></span>
+                <a class="btn btn-light btn-sm rounded-pill px-3 d-none d-md-inline-flex" href="/manager/logout">Logout</a>
+                <button class="navbar-toggler d-lg-none" type="button" id="userSidebarToggle" aria-label="Open navigation menu" aria-controls="userSidebar" aria-expanded="false">
+                    <i class="fa-solid fa-bars text-white"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <div class="user-sidebar-overlay" id="userSidebarOverlay"></div>
+    <div class="container-fluid user-app">
+        <div class="row gx-0">
+            <nav class="col-md-3 col-lg-2 sidebar" id="userSidebar" aria-label="Main navigation">
+                <div class="position-sticky pt-4 px-3">
+                    <div class="text-center mb-4 pb-3 border-bottom">
+                        <%- include('../partials/brand-mark', { size: 50 }) %>
+                        <h6 class="mb-0 fw-bold text-uppercase small">User Panel</h6>
+                    </div>
+                    <%- include('partials/sidebar-navigation', { activePage: 'templates' }) %>
+                </div>
+            </nav>
+            <main class="col-md-9 col-lg-10 px-3 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap align-items-center pb-2 mb-4 border-bottom">
+                    <div>
+                        <h2 class="fw-bold text-dark mb-1">Message Templates</h2>
+                        <small class="text-muted">Create reusable text or media templates for scheduled campaigns.</small>
+                    </div>
+                    <a class="btn btn-outline-success rounded-pill mt-2 mt-md-0" href="/manager/templateschedule">
+                        <i class="fa-solid fa-calendar-days me-1"></i> Template Scheduler
+                    </a>
+                </div>
+                <section class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-3 p-md-4">
+                        <h3 class="h5 fw-bold" id="templateFormTitle">Create a template</h3>
+                        <form id="templateForm" class="composer-form border rounded-3 p-3 mb-4">
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label for="templateName" class="form-label fw-semibold">Template name</label>
+                                    <input class="form-control" id="templateName" maxlength="100" required placeholder="Order update">
+                                </div>
+                                <div class="col-md-5">
+                                    <label for="templateType" class="form-label fw-semibold">Message type</label>
+                                    <select class="form-select" id="templateType">
+                                        <option value="text">Text message</option>
+                                        <option value="image">Image</option>
+                                        <option value="video">Video</option>
+                                        <option value="audio">Audio</option>
+                                        <option value="document">Document</option>
+                                    </select>
+                                </div>
+                                <div class="col-12" id="templateBodyField">
+                                    <label for="templateBody" class="form-label fw-semibold">Message</label>
+                                    <textarea class="form-control" id="templateBody" rows="3" maxlength="4000" placeholder="Hello {{name}}, your order {{order_id}} is ready."></textarea>
+                                </div>
+                                <div class="col-md-5 d-none" id="templateSourceField">
+                                    <label for="templateSource" class="form-label fw-semibold">Media source</label>
+                                    <select class="form-select" id="templateSource">
+                                        <option value="upload">Upload a file</option>
+                                        <option value="url">Use a public URL</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 d-none" id="templateUploadField">
+                                    <label for="templateFile" class="form-label fw-semibold">Media file</label>
+                                    <input class="form-control" id="templateFile" type="file">
+                                    <div class="form-text" id="templateFileHelp">Upload a media file up to 8 MB.</div>
+                                </div>
+                                <div class="col-12 d-none" id="templateUrlField">
+                                    <label for="templateUrl" class="form-label fw-semibold">Public media URL</label>
+                                    <input class="form-control" id="templateUrl" type="url" placeholder="https://example.com/media.mp4">
+                                    <div class="form-text">The URL must be publicly accessible over HTTP or HTTPS.</div>
+                                </div>
+                                <div class="col-12 d-none" id="templateCaptionField">
+                                    <label for="templateCaption" class="form-label fw-semibold">Caption (optional)</label>
+                                    <textarea class="form-control" id="templateCaption" rows="2" maxlength="1000" placeholder="Hello {{name}}, see your order details."></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button class="btn btn-success rounded-pill px-4" id="templateSubmit" type="submit">Save template</button>
+                                    <button class="btn btn-outline-secondary rounded-pill px-4 d-none" id="cancelTemplateEdit" type="button">Cancel edit</button>
+                                </div>
+                            </div>
+                        </form>
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead><tr><th>Template</th><th>Type</th><th>Excel columns</th><th>Actions</th></tr></thead>
+                                <tbody id="templateTableBody"><tr><td colspan="4" class="text-center text-muted py-3">Loading templates…</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+                <%- include('partials/footer') %>
+            </main>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="/js/user-navigation.js"></script>
+    <script>
+        const templateForm = document.getElementById('templateForm');
+        const templateType = document.getElementById('templateType');
+        const templateSource = document.getElementById('templateSource');
+        const templateFile = document.getElementById('templateFile');
+        const templateBody = document.getElementById('templateBody');
+        const templateUrl = document.getElementById('templateUrl');
+        const templateCaption = document.getElementById('templateCaption');
+        const templateTableBody = document.getElementById('templateTableBody');
+        let templates = [];
+        let editingTemplateId = null;
+        let editingTemplate = null;
+
+        function showNotice(type, message) {
+            if (window.toastr && typeof window.toastr[type] === 'function') window.toastr[type](message);
+            else window.alert(message);
+        }
+
+        function updateTemplateFields() {
+            const isText = templateType.value === 'text';
+            const isUpload = templateSource.value === 'upload';
+            document.getElementById('templateBodyField').classList.toggle('d-none', !isText);
+            document.getElementById('templateSourceField').classList.toggle('d-none', isText);
+            document.getElementById('templateUploadField').classList.toggle('d-none', isText || !isUpload);
+            document.getElementById('templateUrlField').classList.toggle('d-none', isText || isUpload);
+            document.getElementById('templateCaptionField').classList.toggle('d-none', isText);
+            templateBody.required = isText;
+            templateUrl.required = !isText && !isUpload;
+            templateFile.required =
+                !isText &&
+                isUpload &&
+                !(
+                    editingTemplate?.type === templateType.value &&
+                    editingTemplate?.source === 'upload' &&
+                    editingTemplate?.hasUpload
+                );
+            const acceptedTypes = {
+                image: 'image/*',
+                video: 'video/*',
+                audio: 'audio/*',
+                document: '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip'
+            };
+            templateFile.accept = acceptedTypes[templateType.value] || '';
+        }
+
+        function resetTemplateForm() {
+            editingTemplateId = null;
+            editingTemplate = null;
+            templateForm.reset();
+            document.getElementById('templateFormTitle').textContent = 'Create a template';
+            document.getElementById('templateSubmit').textContent = 'Save template';
+            document.getElementById('cancelTemplateEdit').classList.add('d-none');
+            document.getElementById('templateFileHelp').textContent = 'Upload a media file up to 8 MB.';
+            updateTemplateFields();
+        }
+
+        function addCell(row, value) {
+            const cell = row.insertCell();
+            cell.textContent = value;
+            return cell;
+        }
+
+        function exportTemplateWorkbook(template) {
+            if (!window.XLSX) {
+                showNotice('error', 'The Excel library could not be loaded. Reload the page and try again.');
+                return;
+            }
+            const headers = ['mobile', ...template.variables];
+            const sheet = XLSX.utils.aoa_to_sheet([headers]);
+            sheet['!cols'] = headers.map(header => ({ wch: Math.max(18, header.length + 4) }));
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, sheet, 'Recipients');
+            const safeName = template.name.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-|-$/g, '') || 'template';
+            XLSX.writeFile(workbook, `${safeName}-recipients.xlsx`);
+        }
+
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/manager/message-templates');
+                const result = await response.json();
+                if (!response.ok || result.error) throw new Error(result.message || 'Templates could not be loaded.');
+                templates = result.data;
+                templateTableBody.replaceChildren();
+                if (!templates.length) {
+                    const row = templateTableBody.insertRow();
+                    const cell = row.insertCell();
+                    cell.colSpan = 4;
+                    cell.className = 'text-center text-muted py-3';
+                    cell.textContent = 'No templates available. Create a template to get started.';
+                    return;
+                }
+                for (const template of templates) {
+                    const row = templateTableBody.insertRow();
+                    addCell(row, template.name);
+                    addCell(row, template.type === 'text' ? 'Text' : `${template.type} (${template.source || 'URL'})`);
+                    addCell(row, template.variables.length ? template.variables.join(', ') : 'No variables');
+                    const actions = row.insertCell();
+                    actions.className = 'text-nowrap';
+                    const exportButton = document.createElement('button');
+                    exportButton.type = 'button';
+                    exportButton.className = 'btn btn-outline-success btn-sm rounded-pill';
+                    exportButton.textContent = 'Export Excel';
+                    exportButton.addEventListener('click', () => exportTemplateWorkbook(template));
+                    actions.append(exportButton);
+                    const scheduleButton = document.createElement('a');
+                    scheduleButton.className = 'btn btn-outline-primary btn-sm rounded-pill';
+                    scheduleButton.href = '/manager/templateschedule';
+                    scheduleButton.textContent = 'Schedule';
+                    actions.append(scheduleButton);
+                    const editButton = document.createElement('button');
+                    editButton.type = 'button';
+                    editButton.className = 'btn btn-outline-secondary btn-sm rounded-pill';
+                    editButton.textContent = 'Edit';
+                    editButton.addEventListener('click', () => {
+                        editingTemplateId = String(template._id);
+                        editingTemplate = template;
+                        document.getElementById('templateFormTitle').textContent = 'Edit template';
+                        document.getElementById('templateName').value = template.name;
+                        templateType.value = template.type || 'text';
+                        templateSource.value = template.source || 'url';
+                        templateBody.value = template.body || '';
+                        templateUrl.value = template.url || '';
+                        templateCaption.value = template.caption || '';
+                        document.getElementById('templateSubmit').textContent = 'Save changes';
+                        document.getElementById('cancelTemplateEdit').classList.remove('d-none');
+                        document.getElementById('templateFileHelp').textContent = template.hasUpload
+                            ? `Current file: ${template.filename}. Choose a new file to replace it, or leave this field empty to keep it.`
+                            : 'Upload a media file up to 8 MB.';
+                        updateTemplateFields();
+                        templateForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    });
+                    actions.append(editButton);
+                    const deleteButton = document.createElement('button');
+                    deleteButton.type = 'button';
+                    deleteButton.className = 'btn btn-outline-danger btn-sm rounded-pill';
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.addEventListener('click', () => deleteTemplate(String(template._id)));
+                    actions.append(deleteButton);
+                }
+            } catch (error) {
+                templateTableBody.replaceChildren();
+                const row = templateTableBody.insertRow();
+                const cell = row.insertCell();
+                cell.colSpan = 4;
+                cell.className = 'text-center text-danger py-3';
+                cell.textContent = error.message;
+            }
+        }
+
+        async function deleteTemplate(id) {
+            if (!confirm('Delete this message template?')) return;
+            try {
+                const response = await fetch(`/manager/message-templates/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (!response.ok || result.error) throw new Error(result.message || 'The template could not be deleted.');
+                showNotice('success', result.message);
+                if (editingTemplateId === id) resetTemplateForm();
+                await loadTemplates();
+            } catch (error) {
+                showNotice('error', error.message);
+            }
+        }
+
+        templateType.addEventListener('change', updateTemplateFields);
+        templateSource.addEventListener('change', updateTemplateFields);
+        document.getElementById('cancelTemplateEdit').addEventListener('click', resetTemplateForm);
+        templateForm.addEventListener('submit', async event => {
+            event.preventDefault();
+            const payload = new FormData();
+            payload.append('name', document.getElementById('templateName').value);
+            payload.append('type', templateType.value);
+            payload.append('source', templateType.value === 'text' ? 'url' : templateSource.value);
+            payload.append('body', templateBody.value);
+            payload.append('url', templateUrl.value);
+            payload.append('caption', templateCaption.value);
+            if (templateFile.files[0]) payload.append('file', templateFile.files[0]);
+            const submit = document.getElementById('templateSubmit');
+            submit.disabled = true;
+            try {
+                const response = await fetch(editingTemplateId ? `/manager/message-templates/${encodeURIComponent(editingTemplateId)}` : '/manager/message-templates', {
+                    method: editingTemplateId ? 'PUT' : 'POST',
+                    body: payload
+                });
+                const result = await response.json();
+                if (!response.ok || result.error) throw new Error(result.message || 'The template could not be saved.');
+                showNotice('success', editingTemplateId ? 'Template updated.' : 'Template created.');
+                resetTemplateForm();
+                await loadTemplates();
+            } catch (error) {
+                showNotice('error', error.message);
+            } finally {
+                submit.disabled = false;
+            }
+        });
+
+        updateTemplateFields();
+        loadTemplates();
+    </script>
+</body>
+</html>

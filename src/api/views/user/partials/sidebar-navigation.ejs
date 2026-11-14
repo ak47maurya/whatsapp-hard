@@ -20,6 +20,16 @@
         </a>
     </li>
     <li class="nav-item">
+        <a class="nav-link <%= activePage === 'create-message' ? 'active' : '' %>" href="/manager/create-message" <% if (activePage === 'create-message') { %>aria-current="page"<% } %>>
+            <i class="fa-solid fa-paper-plane me-2"></i><span>Create Message</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= activePage === 'templates' ? 'active' : '' %>" href="/manager/templates" <% if (activePage === 'templates') { %>aria-current="page"<% } %>>
+            <i class="fa-solid fa-file-lines me-2"></i><span>Create Template</span>
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link <%= activePage === 'templateschedule' ? 'active' : '' %>" href="/manager/templateschedule" <% if (activePage === 'templateschedule') { %>aria-current="page"<% } %>>
             <i class="fa-solid fa-file-excel me-2"></i><span>Template Scheduler</span>
         </a>

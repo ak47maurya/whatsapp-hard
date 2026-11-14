@@ -1,5 +1,6 @@
 const Message = require('../models/message.model')
 const User = require('../models/user.model')
+const { getUploadedMedia } = require('../helper/uploadedMedia')
 const {
     getUserPlan,
     normalizePlanRecipient,
@@ -24,6 +25,9 @@ async function saveToQueue(req, messageData) {
     const recipient = String(messageData.id || '').trim()
     const message = new Message({
         ...messageData,
+        typeId:
+            messageData.typeId ||
+            (messageData.type === 'button' ? 'user' : messageData.typeId),
         tokenId: req.query.key,
         status: 'pending',
     })
@@ -101,10 +105,7 @@ exports.Image = async (req, res) => {
         const message = await saveToQueue(req, {
             id: req.body.id,
             typeId: req.body.typeId,
-            file: req.file,
-            mimetype: req.file?.mimetype,
-            type: 'image',
-            caption: req.body?.caption,
+            ...getUploadedMedia(req.file, 'image', req.body),
         })
         return res.status(201).json({
             error: false,
@@ -137,12 +138,30 @@ exports.sendurlfile = async (req, res) => {
 
 exports.sendbase64file = async (req, res) => {
     try {
+        const type = req.body.type || 'document'
+        if (!['image', 'video', 'audio', 'document'].includes(type)) {
+            return res.status(400).json({
+                error: true,
+                message: 'type must be image, video, audio, or document.',
+            })
+        }
+        if (!req.body.base64 || !req.body.filename) {
+            return res.status(400).json({
+                error: true,
+                message: 'base64 and filename are required.',
+            })
+        }
         const message = await saveToQueue(req, {
             id: req.body.id,
             typeId: req.body.typeId,
             base64: req.body.base64,
-            type: 'document',
-            options: req.body.options,
+            filename: req.body.filename,
+            mimetype: req.body.mimetype,
+            type,
+            options: {
+                ...req.body.options,
+                caption: req.body.caption || req.body.options?.caption,
+            },
         })
         return res.status(201).json({
             error: false,
@@ -160,11 +179,7 @@ exports.imageFile = async (req, res) => {
             id: req.body.id,
             typeId: req.body.typeId,
             userType: req.body.userType,
-            file: req.file,
-            type: 'image',
-            caption: req.body?.caption,
-            replyFrom: req.body?.replyFrom,
-            delay: req.body?.delay,
+            ...getUploadedMedia(req.file, 'image', req.body),
         })
         return res.status(201).json({
             error: false,
@@ -182,11 +197,7 @@ exports.audioFile = async (req, res) => {
             id: req.body.id,
             typeId: req.body.typeId,
             userType: req.body.userType,
-            file: req.file,
-            type: 'audio',
-            caption: req.body?.caption,
-            replyFrom: req.body?.replyFrom,
-            delay: req.body?.delay,
+            ...getUploadedMedia(req.file, 'audio', req.body),
         })
         return res.status(201).json({
             error: false,
@@ -204,11 +215,7 @@ exports.Video = async (req, res) => {
             id: req.body.id,
             typeId: req.body.typeId,
             userType: req.body.userType,
-            file: req.file,
-            type: 'video',
-            caption: req.body?.caption,
-            replyFrom: req.body?.replyFrom,
-            delay: req.body?.delay,
+            ...getUploadedMedia(req.file, 'video', req.body),
         })
         return res.status(201).json({
             error: false,
@@ -225,9 +232,7 @@ exports.Audio = async (req, res) => {
         const message = await saveToQueue(req, {
             id: req.body.id,
             typeId: req.body.typeId,
-            file: req.file,
-            mimetype: req.file?.mimetype,
-            type: 'audio',
+            ...getUploadedMedia(req.file, 'audio', req.body),
         })
         return res.status(201).json({
             error: false,
@@ -245,11 +250,7 @@ exports.Document = async (req, res) => {
             id: req.body.id,
             typeId: req.body.typeId,
             userType: req.body.userType,
-            file: req.file,
-            type: 'document',
-            caption: req.body?.caption,
-            replyFrom: req.body?.replyFrom,
-            delay: req.body?.delay,
+            ...getUploadedMedia(req.file, 'document', req.body),
         })
         return res.status(201).json({
             error: false,
@@ -283,10 +284,17 @@ exports.Mediaurl = async (req, res) => {
 
 exports.Button = async (req, res) => {
     try {
+        const btndata = req.body.btndata
+        if (!req.body.id || !Array.isArray(btndata?.buttons)) {
+            return res.status(400).json({
+                error: true,
+                message: 'id and btndata.buttons are required.',
+            })
+        }
         const message = await saveToQueue(req, {
             id: req.body.id,
-            typeId: req.body.typeId,
-            btndata: req.body.btndata,
+            typeId: req.body.typeId || 'user',
+            btndata,
             type: 'button',
         })
         return res.status(201).json({

@@ -4,6 +4,10 @@ const cron = require('node-cron')
 const axios = require('axios')
 const { enforcePlanExpiry, isPlanExpired } = require('../helper/planAccess')
 const {
+    getInstanceDelayRange,
+    getRandomMessageDelay,
+} = require('../helper/messageDelay')
+const {
     getUserPlan,
     getUtcDay,
     normalizePlanRecipient,
@@ -303,8 +307,34 @@ class UserService {
 }
 
 const extractMessageFields = (msg) => {
-    var { options, groupOptions, id, message, typeId, type, url, base64 } = msg._doc
-    return { options, groupOptions, id, typeId, message, type, url, base64 }
+    const {
+        options,
+        groupOptions,
+        id,
+        message,
+        typeId,
+        type,
+        url,
+        base64,
+        filename,
+        mimetype,
+        file,
+        btndata,
+    } = msg._doc
+    return {
+        options,
+        groupOptions,
+        id,
+        typeId,
+        message,
+        type,
+        url,
+        base64,
+        filename,
+        mimetype,
+        file,
+        btndata,
+    }
 }
 
 async function sendMessage(message) {
@@ -388,7 +418,12 @@ async function sendMessage(message) {
         messageFeild.id = message.id
         messageFeild.typeId = message.typeId
         let data
-        if (message.url) {
+        if (message.type === 'button') {
+            data = await WhatsAppInstances[tokenId].sendButtonMessage(
+                message.id,
+                messageFeild.btndata
+            )
+        } else if (message.url) {
             data = await WhatsAppInstances[tokenId].sendMediaFile(
                 messageFeild,
                 'url'
@@ -481,8 +516,22 @@ async function processInstanceMessages(instanceId) {
         })
             .limit(batchSize)
             .sort({ createdAt: 1 })
-        for (const msg of messages) {
+        const { minDelay, maxDelay } = getInstanceDelayRange(user, instanceId)
+        for (let index = 0; index < messages.length; index += 1) {
+            const msg = messages[index]
+            const remainingDelay =
+                (nextMessageAt.get(instanceId) || 0) - Date.now()
+            if (remainingDelay > 0) {
+                await new Promise((resolve) =>
+                    setTimeout(resolve, remainingDelay)
+                )
+            }
             await sendMessage(msg)
+            const delaySeconds = getRandomMessageDelay(minDelay, maxDelay)
+            nextMessageAt.set(
+                instanceId,
+                Date.now() + delaySeconds * 1000
+            )
         }
     } finally {
         processingInstances.delete(instanceId)
@@ -490,6 +539,7 @@ async function processInstanceMessages(instanceId) {
 }
 
 const processingInstances = new Set()
+const nextMessageAt = new Map()
 
 // Scheduler to process messages every minute
 setInterval(async () => {

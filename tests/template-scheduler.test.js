@@ -5,6 +5,7 @@ const {
 const {
     validateRecipients,
 } = require('../src/api/controllers/templateScheduledMessage.controller')
+const config = require('../src/config/config')
 
 describe('template scheduler', () => {
     it('validates JSON recipients and renders template values on the server', () => {
@@ -57,6 +58,7 @@ describe('template scheduler', () => {
             url: 'https://example.com/order.jpg',
             caption: 'Hi {{name}}, order {{order_id}} is ready.',
         })
+
         assert.deepStrictEqual(image.data.variables, ['name', 'order_id'])
         assert.strictEqual(image.data.type, 'image')
         assert.match(
@@ -67,6 +69,42 @@ describe('template scheduler', () => {
             }).error,
             /valid http or https media URL/
         )
+    })
+
+    it('validates uploaded image, video, audio, and document templates', () => {
+        const allowedTypes = {
+            imageMimeTypes: config.imageMimeTypes,
+            videoMimeTypes: config.videoMimeTypes,
+            audioMimeTypes: config.audioMimeTypes,
+            documentMimeTypes: config.documentMimeTypes,
+        }
+        config.imageMimeTypes = ['image/jpeg']
+        config.videoMimeTypes = ['video/mp4']
+        config.audioMimeTypes = ['audio/mpeg']
+        config.documentMimeTypes = ['application/pdf']
+
+        try {
+            const types = [
+                ['image', 'image/jpeg'],
+                ['video', 'video/mp4'],
+                ['audio', 'audio/mpeg'],
+                ['document', 'application/pdf'],
+            ]
+            for (const [type, mimetype] of types) {
+                const result = validateTemplate({
+                    name: `${type} upload`,
+                    type,
+                    source: 'upload',
+                    fileData: Buffer.from('sample media').toString('base64'),
+                    filename: `sample.${type}`,
+                    mimetype,
+                })
+                assert.strictEqual(result.data.type, type)
+                assert.strictEqual(result.data.source, 'upload')
+            }
+        } finally {
+            Object.assign(config, allowedTypes)
+        }
     })
 
     it('renders media captions from validated JSON recipients', () => {

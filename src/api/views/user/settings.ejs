@@ -31,7 +31,7 @@
   <nav class="navbar navbar-expand-lg navbar-gold fixed-top shadow-sm">
     <div class="container-fluid px-4">
       <a class="navbar-brand d-flex align-items-center gap-2" href="/manager/dashboard">
-        <span class="d-inline-flex align-items-center justify-content-center" style="width:38px;height:38px;border-radius:10px;background:#fff;color:var(--gold-dark);font-weight:800;">AK</span>
+        <%- include('../partials/brand-mark', { size: 38 }) %>
         <span>AK Automations</span>
       </a>
       <div class="d-flex align-items-center gap-3 ms-auto">
@@ -50,7 +50,7 @@
       <nav class="col-md-3 col-lg-2 sidebar" id="userSidebar" aria-label="Main navigation">
         <div class="position-sticky pt-4 px-3">
           <div class="text-center mb-4 pb-3 border-bottom">
-            <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-2" style="width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#fff;font-weight:800;font-size:1.25rem;">AK</div>
+            <%- include('../partials/brand-mark', { size: 50 }) %>
             <h6 class="mb-0 fw-bold text-uppercase small">User Panel</h6>
           </div>
           <%- include('partials/sidebar-navigation', { activePage: 'settings' }) %>
@@ -99,13 +99,14 @@
                       <input type="text" class="form-control" id="browser" value="Ubuntu" maxlength="25" required>
                     </div>
                     <div class="form-group mt-2">
-                      <label>Message Delay (seconds)</label>
+                      <label>Message delay between messages (seconds)</label>
+                      <div class="form-text mb-2">A random delay in this range is applied between messages sent by this instance.</div>
                       <div class="row">
                         <div class="col-6">
-                          <input type="number" class="form-control" id="minDelay" value="10" min="1" placeholder="Min Delay">
+                          <input type="number" class="form-control" id="minDelay" value="15" min="1" max="3600" required placeholder="Minimum delay">
                         </div>
                         <div class="col-6">
-                          <input type="number" class="form-control" id="maxDelay" value="20" min="1" placeholder="Max Delay">
+                          <input type="number" class="form-control" id="maxDelay" value="20" min="1" max="3600" required placeholder="Maximum delay">
                         </div>
                       </div>
                     </div>
@@ -240,13 +241,14 @@
                       <input type="text" class="form-control" id="editBrowser" maxlength="25" required>
                     </div>
                     <div class="form-group mt-2">
-                      <label>Message Delay (seconds)</label>
+                      <label>Message delay between messages (seconds)</label>
+                      <div class="form-text mb-2">A random delay in this range is applied between messages sent by this instance.</div>
                       <div class="row">
                         <div class="col-6">
-                          <input type="number" class="form-control" id="editMinDelay" value="10" min="1">
+                          <input type="number" class="form-control" id="editMinDelay" value="15" min="1" max="3600" required>
                         </div>
                         <div class="col-6">
-                          <input type="number" class="form-control" id="editMaxDelay" value="20" min="1">
+                          <input type="number" class="form-control" id="editMaxDelay" value="20" min="1" max="3600" required>
                         </div>
                       </div>
                     </div>
@@ -488,6 +490,12 @@
             // Handle Form Submission
             function submitForm(event) {
               event.preventDefault();
+              const minDelay = Number(document.getElementById('minDelay').value);
+              const maxDelay = Number(document.getElementById('maxDelay').value);
+              if (!Number.isInteger(minDelay) || !Number.isInteger(maxDelay) || minDelay > maxDelay) {
+                alert('Enter a valid message delay range. The maximum must be greater than or equal to the minimum.');
+                return;
+              }
 
               // Gather Form Data
               const instanceData = {
@@ -499,8 +507,8 @@
                   .map(el => el.value),
                 ignoreGroups: document.getElementById('ignoreGroups').checked,
                 messagesRead: document.getElementById('messagesRead').checked,
-                minDelay: parseInt(document.getElementById('minDelay').value),
-                maxDelay: parseInt(document.getElementById('maxDelay').value)
+                minDelay,
+                maxDelay
               };
 
               (async () => {
@@ -649,6 +657,8 @@
                 const instance = data.instance_data;
                 document.getElementById('editKey').value = instance.instance_key;
                 document.getElementById('editBrowser').value = instance.browser;
+                document.getElementById('editMinDelay').value = instance.minDelay ?? 15;
+                document.getElementById('editMaxDelay').value = instance.maxDelay ?? 20;
                 document.getElementById('editWebhook').checked = instance.webhook;
                 document.getElementById('editWebhookUrl').value = instance.webhookUrl || '';
                 document.getElementById('editBase64').checked = instance.base64;
@@ -691,9 +701,15 @@
               const base64 = document.getElementById('editBase64').checked;
               const ignoreGroups = document.getElementById('editIgnoreGroups').checked;
               const messagesRead = document.getElementById('editMessagesRead').checked;
+              const minDelay = Number(document.getElementById('editMinDelay').value);
+              const maxDelay = Number(document.getElementById('editMaxDelay').value);
 
               if (!key || !browser || (webhook && !webhookUrl)) {
                 console.log('Webhook URL cannot be empty.');
+                return;
+              }
+              if (!Number.isInteger(minDelay) || !Number.isInteger(maxDelay) || minDelay > maxDelay) {
+                alert('Enter a valid message delay range. The maximum must be greater than or equal to the minimum.');
                 return;
               }
 
@@ -714,12 +730,12 @@
                 webhookEvents,
                 ignoreGroups,
                 messagesRead,
-                minDelay: parseInt(document.getElementById('editMinDelay').value),
-                maxDelay: parseInt(document.getElementById('editMaxDelay').value)
+                minDelay,
+                maxDelay
               };
 
               try {
-                const response = await fetch(`/instance/edit`, {
+                const response = await fetch(`/instance/editar`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',

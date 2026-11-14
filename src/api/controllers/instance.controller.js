@@ -4,6 +4,11 @@ const path = require('path');
 const config = require('../../config/config');
 const { Session } = require('../class/session');
 const { enforcePlanExpiry, getInstanceOwner } = require('../helper/planAccess');
+const {
+    DEFAULT_MIN_DELAY_SECONDS,
+    DEFAULT_MAX_DELAY_SECONDS,
+    MAX_DELAY_SECONDS,
+} = require('../helper/messageDelay');
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function getOrInitInstance(key) {
@@ -118,6 +123,30 @@ exports.editar = async (req, res) => {
             message: 'Plan expired. Renew your plan before reconnecting an instance.',
         });
     }
+    const hasDelayUpdate =
+        req.body.minDelay !== undefined || req.body.maxDelay !== undefined;
+    const savedDelay = owner?.insdetails?.find(
+        (instance) => instance.Token_Id === key
+    );
+    const minDelay = Number(
+        req.body.minDelay ?? savedDelay?.minDelay ?? DEFAULT_MIN_DELAY_SECONDS
+    );
+    const maxDelay = Number(
+        req.body.maxDelay ?? savedDelay?.maxDelay ?? DEFAULT_MAX_DELAY_SECONDS
+    );
+    if (
+        hasDelayUpdate &&
+        (!Number.isInteger(minDelay) ||
+            !Number.isInteger(maxDelay) ||
+            minDelay < 1 ||
+            maxDelay < minDelay ||
+            maxDelay > MAX_DELAY_SECONDS)
+    ) {
+        return res.status(400).json({
+            error: true,
+            message: `Message delay must be between 1 and ${MAX_DELAY_SECONDS} seconds, and the maximum must not be less than the minimum.`,
+        });
+    }
     const filePath = path.join('db/sessions.json');
     const data = await fs.readFile(filePath, 'utf-8');
     const sessions = JSON.parse(data);
@@ -126,6 +155,12 @@ exports.editar = async (req, res) => {
     if (index !== -1) {
         sessions[index] = { key, ignoreGroups, webhook, base64, webhookUrl, browser, webhookEvents, messagesRead };
         await fs.writeFile(filePath, JSON.stringify(sessions, null, 2), 'utf-8');
+
+        if (hasDelayUpdate && savedDelay) {
+            savedDelay.minDelay = minDelay;
+            savedDelay.maxDelay = maxDelay;
+            await owner.save();
+        }
 
         const instance = WhatsAppInstances[key];
         if (instance) {
@@ -277,6 +312,10 @@ exports.info = async (req, res) => {
     const key = req.query.key;
     const instance = await getOrInitInstance(key);
     if (instance) {
+        const owner = await getInstanceOwner(key);
+        const delaySettings = owner?.insdetails?.find(
+            (instanceDetails) => instanceDetails.Token_Id === key
+        );
         let data;
         try {
             data = await instance.getInstanceDetail(key);
@@ -286,7 +325,13 @@ exports.info = async (req, res) => {
         return res.json({
             error: false,
             message: 'Instance fetched successfully',
-            instance_data: data,
+            instance_data: {
+                ...data,
+                minDelay:
+                    delaySettings?.minDelay ?? DEFAULT_MIN_DELAY_SECONDS,
+                maxDelay:
+                    delaySettings?.maxDelay ?? DEFAULT_MAX_DELAY_SECONDS,
+            },
         });
     } else {
         return res.json({
